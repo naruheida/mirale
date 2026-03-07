@@ -360,6 +360,31 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
       <option value="self">フリーランス・自営業</option>
     </select>
   </div>
+  <!-- モヤモヤ質問 -->
+  <div class="question-block form-row" id="q-moya">
+    <label class="form-label">今、仕事で一番モヤモヤしていることは？</label>
+    <select id="moya">
+      <option value="">選択してください</option>
+      <option value="growth">成長実感がない・学べていない</option>
+      <option value="salary">年収・評価が自分に見合っていない</option>
+      <option value="relation">人間関係・職場環境が辛い</option>
+      <option value="future">このままでいいのか将来が漠然と不安</option>
+      <option value="fine">特にない・今は充実している</option>
+    </select>
+  </div>
+
+  <!-- タイミング質問 -->
+  <div class="question-block form-row" id="q-timing">
+    <label class="form-label">状況を変えたいと思っているのはいつ頃ですか？</label>
+    <select id="timing">
+      <option value="">選択してください</option>
+      <option value="now">今すぐにでも動きたい</option>
+      <option value="half">半年以内に動きたい</option>
+      <option value="year">1〜2年後を考えている</option>
+      <option value="vague">まだ具体的には考えていない</option>
+    </select>
+  </div>
+
   <!-- 会社名サジェスト -->
   <div class="form-row">
     <label class="form-label">勤務先（任意）</label>
@@ -632,6 +657,76 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
       <div class="rs-source">タイプ×業種×職種×役職で算出</div>
     </div>
     <div id="rAISection"></div>
+  </div>
+
+  <!-- Section07：今の状態 -->
+  <div class="result-section" id="sec-state" style="display:none;">
+    <div class="rs-header">
+      <div class="rs-num">07</div>
+      <div class="rs-title">今のあなたの状態</div>
+    </div>
+    <div style="background:var(--ink);color:var(--paper);padding:20px 24px;margin-bottom:12px;">
+      <div style="font-family:'Noto Serif JP',serif;font-size:15px;font-style:italic;color:var(--gold2);margin-bottom:12px;" id="coreMessage"></div>
+      <p style="font-size:13px;line-height:1.9;color:rgba(245,240,232,0.85);" id="stateCopy"></p>
+    </div>
+    <div style="background:var(--paper2);border-left:3px solid var(--border);padding:14px 16px;">
+      <div style="font-size:9px;letter-spacing:0.2em;color:var(--muted);font-weight:700;margin-bottom:8px;">なぜそうなるか</div>
+      <p style="font-size:13px;line-height:1.8;" id="whyCopy"></p>
+    </div>
+  </div>
+
+  <!-- Section08：3年後シナリオ -->
+  <div class="result-section" id="sec-future" style="display:none;">
+    <div class="rs-header">
+      <div class="rs-num">08</div>
+      <div class="rs-title">このまま3年経つと</div>
+    </div>
+    <div style="border:1px solid var(--border);border-left:4px solid var(--red);padding:16px 20px;background:var(--white);">
+      <p style="font-size:13px;line-height:1.9;" id="futureCopy"></p>
+    </div>
+    <p class="source-note" id="sourceNote" style="font-size:10px;color:var(--muted);margin-top:8px;"></p>
+  </div>
+
+  <!-- Section09：今すぐやること -->
+  <div class="result-section" id="sec-action" style="display:none;">
+    <div class="rs-header">
+      <div class="rs-num">09</div>
+      <div class="rs-title">今すぐやること</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
+        <span style="font-size:18px;flex-shrink:0;">🔥</span>
+        <div><div style="font-size:10px;color:var(--red);font-weight:700;letter-spacing:0.1em;margin-bottom:4px;">今週中</div><span id="actionWeek" style="font-size:13px;line-height:1.7;"></span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
+        <span style="font-size:18px;flex-shrink:0;">📅</span>
+        <div><div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:0.1em;margin-bottom:4px;">今月中</div><span id="actionMonth" style="font-size:13px;line-height:1.7;"></span></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
+        <span style="font-size:18px;flex-shrink:0;">🌱</span>
+        <div><div style="font-size:10px;color:var(--green);font-weight:700;letter-spacing:0.1em;margin-bottom:4px;">3ヶ月以内</div><span id="actionQuarter" style="font-size:13px;line-height:1.7;"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section10：タイプ相性 -->
+  <div class="result-section" id="sec-compat" style="display:none;">
+    <div class="rs-header">
+      <div class="rs-num">10</div>
+      <div class="rs-title">あなたのタイプ相性</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);">
+      <div style="background:var(--white);padding:16px;">
+        <div style="font-size:9px;color:var(--green);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">🔥 相性の良いタイプ</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;" id="compatGood"></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;" id="compatGoodReason"></div>
+      </div>
+      <div style="background:var(--paper2);padding:16px;">
+        <div style="font-size:9px;color:var(--red);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">⚡ ライバルタイプ</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;" id="compatRival"></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;" id="compatRivalReason"></div>
+      </div>
+    </div>
   </div>
 
   <div class="share-wrap">
@@ -1207,6 +1302,136 @@ const TYPE_BG = {
   'BCXPR':'#37474F','BCXPM':'#1B5E20','BCXSR':'#455A64','BCXSM':'#4E342E',
   'BCYPR':'#4A148C','BCYPM':'#263238','BCYSR':'#00695C','BCYSM':'#78909C',
 };
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Mirale v10 コピーデータ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const SOURCE_NOTE = '※厚労省賃金構造基本統計調査×Miraleデータより算出';
+
+const TYPE_GROUP = {
+  AHXPR:'AH',AHXPM:'AH',AHXSR:'AH',AHXSM:'AH',
+  AHYPR:'AH',AHYPM:'AH',AHYSR:'AH',AHYSM:'AH',
+  ACXPR:'AC',ACXPM:'AC',ACXSR:'AC',ACXSM:'AC',
+  ACYPR:'AC',ACYPM:'AC',ACYSR:'AC',ACYSM:'AC',
+  BHXPR:'BH',BHXPM:'BH',BHXSR:'BH',BHXSM:'BH',
+  BHYPR:'BH',BHYPM:'BH',BHYSR:'BH',BHYSM:'BH',
+  BCXPR:'BC',BCXPM:'BC',BCXSR:'BC',BCXSM:'BC',
+  BCYPR:'BC',BCYPM:'BC',BCYSR:'BC',BCYSM:'BC',
+};
+
+function getAgeGroup(age) {
+  if (age <= 29) return '20s';
+  if (age <= 39) return '30s';
+  if (age <= 49) return '40s';
+  return '50s';
+}
+
+const INDUSTRY_AVG = {
+  'IT・ソフトウェア・通信':        { avg: 587, median: 520 },
+  '金融・保険・証券':              { avg: 623, median: 580 },
+  'コンサル・シンクタンク':        { avg: 712, median: 650 },
+  '医療・製薬・医療機器':          { avg: 512, median: 480 },
+  '商社・卸売':                    { avg: 634, median: 590 },
+  '小売・流通・サービス':          { avg: 398, median: 360 },
+  '公務員・教育・非営利':          { avg: 442, median: 420 },
+  '建設・不動産':                  { avg: 487, median: 450 },
+  'メディア・広告・エンタメ':      { avg: 521, median: 480 },
+  'メーカー・製造業':              { avg: 534, median: 500 },
+  'その他':                        { avg: 450, median: 410 },
+};
+
+const CORE_MESSAGE = {
+  AH: 'あなたのエネルギーは、正しい場所に向かっていますか？',
+  AC: 'データで見えている真実を、周囲はまだ理解していない',
+  BH: 'あなたの共感力は才能です。でも今、正しく使えていますか？',
+  BC: 'あなたが積み上げてきたものは、思っているより大きい',
+};
+
+const STATE_COPY = {
+  'AH_30s_growth': '給料より成長実感を求めている。でも周囲には言えずにいる。このエネルギーの行き場がないまま、時間だけが過ぎている状態です。',
+  'AH_30s_salary': '実力に見合った評価を求めている。でもその不満を、まだ「行動」に変えられていない。',
+  'AH_30s_future': '今の場所で正解なのか、もっと上を目指せるのか。答えが出ないまま焦りだけが積もっている。',
+  'AH_30s_relation': '職場の環境が自分のパフォーマンスを下げている。でもそれを言い訳にしたくないという葛藤がある。',
+  'AH_30s_fine': '今は充実している。でもこの状態がいつまで続くか、という不安が頭の片隅にある。',
+  'AH_20s_growth': 'もっと速く成長できるはずだという確信がある。でも今の環境がその速度についてきていない。',
+  'AH_20s_future': 'このまま進んでいいのか、もっと大きな場所に行くべきか。答えを急ぎすぎている状態です。',
+  'AH_40s_future': '「まだやれる」という確信と「時間が残り少ない」という焦りが、同時に存在している。',
+  'AH_40s_growth': '成長の踊り場に来ている。でもこのタイプが止まることは、エンジンが止まることと同じです。',
+  'AH_50s_future': '集大成に向けて動きたい気持ちはある。でも組織の論理が、そのエネルギーにブレーキをかけている。',
+  'AC_30s_salary': '正確に仕事をこなしているのに、評価が感情や政治で決まる理不尽さを感じている。',
+  'AC_30s_growth': '今の仕事は「できる」。でもそれが成長なのか、消化作業なのか、区別がつかなくなっている。',
+  'AC_30s_future': 'このまま同じ場所にいていいのか。データでは見えているのに、答えが出せずにいる。',
+  'AC_30s_relation': '論理で動けない人間との摩擦に、静かに消耗している。',
+  'AC_20s_growth': 'スキルは積めている。でも「これで本当に正しいのか」という疑問が消えない。',
+  'AC_40s_future': '積み上げてきた専門性の賞味期限を、誰より自分が気にしている。',
+  'AC_40s_salary': '実力は証明してきた。でも組織の評価システムが、それに追いついていない。',
+  'AC_50s_future': '自分が積み上げてきた知識と経験を、次にどう渡すか。その問いが浮かび始めている。',
+  'BH_30s_relation': '人のために動いてきた。でも最近、自分が消耗しているだけではないかと感じ始めている。',
+  'BH_30s_growth': '人との関わりの中で成長したい。でも今の環境では、その機会が少なすぎる。',
+  'BH_30s_future': '自分が本当にやりたいことと、今やっていることの間にズレがある。でも言語化できていない。',
+  'BH_30s_salary': '貢献してきた分の報酬が、まだ返ってきていない感覚がある。',
+  'BH_20s_relation': '職場の人間関係に消耗している。でも「自分が悪いのか」と思ってしまう。',
+  'BH_40s_relation': '人のために動き続けてきた。そろそろ自分のために動いていい頃だと、うっすら感じている。',
+  'BH_40s_salary': '人のために動いてきた分の報酬が、まだ返ってきていない感覚がある。',
+  'BH_50s_future': '残りの時間で、誰かの人生に本当の意味で影響を与えたい。その気持ちが強くなっている。',
+  'BC_30s_salary': 'コツコツ積み上げてきたのに、派手に動く人間の方が評価される理不尽さを感じている。',
+  'BC_30s_future': 'このままで大丈夫なのか。不安はある。でも具体的に何をすればいいかわからない。',
+  'BC_30s_growth': '着実にやってきた。でもふと「これで成長しているのか」という疑問が浮かぶ。',
+  'BC_30s_relation': '信頼関係を大切にしてきたのに、それが報われない経験が続いている。',
+  'BC_20s_future': '安定を求めているはずなのに、このままでいいのかという漠然とした不安が消えない。',
+  'BC_40s_future': '今の場所で逃げ切れるのか、それとも動くべきなのか。判断できずにいる。',
+  'BC_40s_salary': '長年積み上げてきた実績が、給与に反映されていない現実がある。',
+  'BC_50s_future': '積み上げてきたものの価値を、自分より周囲の方が理解していないと感じている。',
+  'AH_default': '自分のエネルギーの使い先が、今の環境とかみ合っていない状態です。',
+  'AC_default': '正しく動いているのに、それが正当に評価されていないもどかしさがある。',
+  'BH_default': '人との関わりの中で力を発揮できる環境を、まだ見つけられていない。',
+  'BC_default': '積み上げてきたものが、正しく評価される場所にまだいない。',
+};
+
+const WHY_COPY = {
+  AH: 'AH系タイプは環境への要求水準が高く、現状維持に強いストレスを感じる構造があります。これは弱さではなく、このタイプの燃料です。エネルギーが高い分、向かう方向が重要になります。',
+  AC: 'AC系タイプは論理と精度で動きます。感情や空気で動く組織の中では、正しいのに伝わらないという状況が繰り返されます。これはコミュニケーションの問題ではなく、環境との相性の問題です。',
+  BH: 'BH系タイプは人との関係性からエネルギーを得ます。与えることで輝くタイプですが、受け取る側の質が低い環境では、消耗だけが積み重なります。',
+  BC: 'BC系タイプは着実さと継続性が最大の武器です。短期的な派手さより長期的な信頼を積み上げます。ただしその価値が見えにくい組織では、正当な評価を受けにくい構造があります。',
+};
+
+const FUTURE_COPY = {
+  'AH_now':   '今すぐ動く準備ができています。ただし準備なしに転職すると年収が下がるパターンに入りやすい。同タイプの42%がこの罠にはまっています。',
+  'AH_half':  '半年以内に動く意志があるなら、今から市場価値を測り始めてください。動いてから調べるのでは遅い。',
+  'AH_year':  'エネルギーがある今のうちに動かないと、1〜2年後には現状維持コストが上がります。',
+  'AH_vague': 'このまま3年経つと、転職意欲が急激に高まった瞬間に準備ゼロで動くことになります。',
+  'AC_now':   '動く意志があるなら、データを揃えてから動いてください。感情で動くと後悔します。',
+  'AC_half':  '半年あれば十分な準備ができます。市場価値の数値化から始めてください。',
+  'AC_year':  '専門性の賞味期限は思っているより短い。1〜2年後も今の専門性が通用するか検証してください。',
+  'AC_vague': 'このまま動かないと、気づいた時には専門性が陳腐化しているリスクがあります。',
+  'BH_now':   '動く気持ちがあるなら、環境を変えることで消耗が止まります。ただし同じ環境パターンを繰り返さないための準備が必要です。',
+  'BH_half':  '半年以内に動くなら、次の環境の「人の質」を最優先で選んでください。',
+  'BH_year':  'このまま消耗が続くと、1〜2年後に突然限界が来るパターンがあります。',
+  'BH_vague': '環境を変える気がないなら、今の環境での消耗を減らす技術を先に身につけてください。',
+  'BC_now':   '動く意志があるなら、積み上げてきたものを言語化することが最初のステップです。',
+  'BC_half':  '半年あれば、今の実績を転職市場で通用する形に整理できます。',
+  'BC_year':  '1〜2年後を見据えているなら、今から社外での実績作りを始めてください。',
+  'BC_vague': 'このまま動かないと、積み上げてきたものが社内でしか通用しないスキルになるリスクがあります。',
+};
+
+const ACTION_COPY = {
+  'AH_now':   { week:'転職サイトに登録して自分の市場価値を数字で確認する（登録だけでOK）', month:'上司に半年後のキャリアパスについて話す機会を作る', quarter:'副業・社外活動で会社以外の収入源を1つ作り始める' },
+  'AH_vague': { week:'自分のキャリアの棚卸しを紙に書き出す（30分でOK）', month:'転職サイトを見るだけ見て市場の空気を把握する', quarter:'社内で成長できるポジションを交渉する' },
+  'AC_now':   { week:'自分のスキルセットを市場価値として数値化する', month:'転職エージェントに登録して客観的な評価をもらう', quarter:'専門性を外部に発信し始める（X・note等）' },
+  'AC_vague': { week:'今の専門性の市場需要をリサーチする（求人票を10件見る）', month:'社内で自分の価値を可視化するレポートを作る', quarter:'隣接スキルを1つ習得してポートフォリオを広げる' },
+  'BH_now':   { week:'消耗の原因を「環境」と「人」に分けて書き出す', month:'転職サイトで職場環境の口コミを徹底的に調べる', quarter:'人間関係の質が高い環境に移るための準備を始める' },
+  'BH_vague': { week:'今の職場で消耗しない関わり方を意識的に試す', month:'社外のコミュニティに1つ参加して外の空気を感じる', quarter:'自分が本当に力を発揮できる環境の条件を言語化する' },
+  'BC_now':   { week:'今までの実績を箇条書きで20個書き出す', month:'その実績を転職市場で通用する言葉に翻訳する', quarter:'転職エージェントに登録して市場価値を確認する' },
+  'BC_vague': { week:'社内で自分にしかできない仕事を3つ特定する', month:'その強みを上司・同僚に見える形でアウトプットする', quarter:'社外での小さな実績を1つ作る（勉強会・副業等）' },
+};
+
+const COMPATIBILITY = {
+  AH: { good:'BCYSMタイプ', good_reason:'あなたが突っ走るとき、リスクを静かに管理してくれる唯一のタイプ', rival:'ACXPMタイプ', rival_reason:'データで全てを判断する分析エリート。直感とぶつかるが、最も成長させてくれる相手' },
+  AC: { good:'BHXSMタイプ', good_reason:'感情で組織を動かす力を持つ。あなたの論理に人間味を加えてくれる', rival:'AHXPRタイプ', rival_reason:'直感と熱量で動く革命家。論理より先に動くその姿が最大のストレスになる' },
+  BH: { good:'ACYSMタイプ', good_reason:'静かに支え、確実に動く。あなたの感情型リーダーシップを地に足つけてくれる', rival:'BCXPRタイプ', rival_reason:'感情より数字とルールで動くタイプ。価値観の衝突が最も起きやすい相手' },
+  BC: { good:'AHYSRタイプ', good_reason:'自由に動きながらも結果を出す。あなたの安定志向に適度な刺激を与えてくれる', rival:'BHXPRタイプ', rival_reason:'感情と熱量で人を動かすカリスマ。堅実さより勢いを優先するその姿が苦手になりやすい' },
+};
+
 const SESSION_ID = 'sess_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
 let profile={}, answers={}, curQ=0, resultData={}, chartInst=null, userEmail='', isPurchased=false;
 
@@ -1260,6 +1485,8 @@ function showLogin(){
     empType:$('p-emptype').value||'fulltime',
     priority:$('p-priority').value||'income',
     occupation:$('p-occupation').value||'',
+    moya:$('moya').value||'',
+    timing:$('timing').value||'',
   };
   show('s-login');setPbar(12);
 }
@@ -1578,6 +1805,44 @@ function renderFullResult(){
     </div>
     <div style="font-size:10px;color:var(--muted);text-align:right;">※AIリスクスコアはタイプ・業種・職種・役職を組み合わせた独自算出値です</div>
   `;
+
+  // ━━━ v10追加ロジック ━━━
+  const group     = TYPE_GROUP[typeCode] || 'AH';
+  const ageGroup  = getAgeGroup(profile.age);
+  const moya      = profile.moya    || 'future';
+  const timing    = profile.timing  || 'vague';
+  const timingKey = ['now','half','year','vague'].includes(timing) ? timing : 'vague';
+  const actionKey = (timing === 'now' || timing === 'half') ? `${group}_now` : `${group}_vague`;
+
+  const coreMSG    = CORE_MESSAGE[group];
+  const stateCopy  = STATE_COPY[`${group}_${ageGroup}_${moya}`] || STATE_COPY[`${group}_default`];
+  const whyCopy    = WHY_COPY[group];
+  const futureCopy = FUTURE_COPY[`${group}_${timingKey}`] || FUTURE_COPY[`${group}_vague`];
+  const actionCopy = ACTION_COPY[actionKey] || ACTION_COPY[`${group}_vague`];
+  const compat     = COMPATIBILITY[group];
+
+  if (coreMSG)    { document.getElementById('coreMessage').textContent  = coreMSG; }
+  if (stateCopy)  { document.getElementById('stateCopy').textContent    = stateCopy; }
+  if (whyCopy)    { document.getElementById('whyCopy').textContent      = whyCopy; }
+  if (futureCopy) { document.getElementById('futureCopy').textContent   = futureCopy; }
+  document.getElementById('sourceNote').textContent   = SOURCE_NOTE;
+  if (actionCopy) {
+    document.getElementById('actionWeek').textContent    = actionCopy.week;
+    document.getElementById('actionMonth').textContent   = actionCopy.month;
+    document.getElementById('actionQuarter').textContent = actionCopy.quarter;
+  }
+  if (compat) {
+    document.getElementById('compatGood').textContent        = compat.good;
+    document.getElementById('compatGoodReason').textContent  = compat.good_reason;
+    document.getElementById('compatRival').textContent       = compat.rival;
+    document.getElementById('compatRivalReason').textContent = compat.rival_reason;
+  }
+
+  // 新セクションを表示
+  ['sec-state','sec-future','sec-action','sec-compat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  });
 
   show('s-result');setPbar(100);window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1925,6 +2190,8 @@ async function saveData(inc, typeCode) {
     emp_type: profile.empType||'',
     priority: profile.priority||'',
     occupation: profile.occupation||'',
+    moya: profile.moya||'',
+    timing: profile.timing||'',
     segment_tag: `${profile.job}_${profile.size}_${profile.age}代`,
   };
 
