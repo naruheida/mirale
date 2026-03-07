@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mirale｜プレミアムレポート</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#0e0c0a;--paper:#f5f0e8;--paper2:#ede7d8;--red:#c0392b;--red2:#e74c3c;
+  --gold:#b8962e;--gold2:#d4af50;--muted:#7a6f62;--border:#cfc4b0;--white:#fdfaf5;--green:#27ae60;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ink);color:var(--paper);font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
+
+/* ヘッダー */
+.premium-header{
+  background:#000;border-bottom:1px solid #222;
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.ph-logo{font-family:'Noto Serif JP',serif;font-weight:900;font-size:15px;letter-spacing:0.1em;padding:16px 0;display:flex;align-items:center;gap:10px;}
+.ph-logo-mark{width:26px;height:26px;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Bebas Neue',sans-serif;}
+.ph-badge{font-size:10px;color:var(--gold2);letter-spacing:0.15em;border:1px solid var(--gold);padding:3px 10px;}
+
+/* Coming Soon バナー */
+.coming-soon-banner{
+  background:linear-gradient(135deg,#1a1500,#2a2000);
+  border-bottom:1px solid var(--gold);
+  padding:20px 24px;text-align:center;
+}
+.csb-label{font-size:10px;letter-spacing:0.3em;color:var(--gold2);font-weight:700;margin-bottom:8px;}
+.csb-title{font-family:'Noto Serif JP',serif;font-size:clamp(20px,5vw,32px);font-weight:900;margin-bottom:8px;}
+.csb-title em{color:var(--gold2);font-style:normal;}
+.csb-sub{font-size:12px;color:#888;line-height:1.8;max-width:480px;margin:0 auto 20px;}
+.csb-form{display:flex;gap:8px;max-width:400px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
+.csb-input{flex:1;min-width:220px;padding:12px 16px;background:#111;border:1px solid #444;color:var(--paper);font-size:13px;}
+.csb-btn{padding:12px 20px;background:var(--gold);color:#000;border:none;font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.csb-btn:hover{background:var(--gold2);}
+.csb-note{font-size:10px;color:#555;margin-top:8px;}
+.csb-done{display:none;padding:12px 24px;background:#111;border:1px solid var(--gold);color:var(--gold2);font-size:13px;}
+
+.main{max-width:760px;margin:0 auto;padding:40px 24px 80px;}
+
+/* セクション共通 */
+.section{margin-bottom:48px;}
+.section-header{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #222;}
+.section-num{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#222;line-height:1;float:left;margin-right:16px;margin-top:-4px;}
+.section-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;letter-spacing:0.05em;padding-top:4px;}
+.section-source{font-size:10px;color:#555;letter-spacing:0.1em;margin-top:4px;clear:none;}
+.clearfix::after{content:'';display:table;clear:both;}
+
+/* マストヘッド */
+.report-masthead{
+  background:linear-gradient(135deg,#111,#1a1a1a);
+  border:1px solid #222;padding:32px;margin-bottom:40px;text-align:center;
+}
+.rm-eyebrow{font-size:10px;letter-spacing:0.3em;color:var(--gold2);font-weight:700;margin-bottom:16px;}
+.rm-type-code{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.2em;color:#555;margin-bottom:8px;}
+.rm-type-name{font-family:'Noto Serif JP',serif;font-size:clamp(22px,5vw,36px);font-weight:900;margin-bottom:6px;}
+.rm-type-sub{font-size:13px;color:#888;margin-bottom:20px;}
+.rm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#222;border:1px solid #222;margin-top:20px;}
+.rm-stat{background:#111;padding:16px 12px;text-align:center;}
+.rm-stat-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold2);line-height:1;}
+.rm-stat-lbl{font-size:10px;color:#555;margin-top:4px;letter-spacing:0.05em;}
+
+/* ロック表示（Coming Soon用） */
+.locked-section{
+  position:relative;overflow:hidden;border:1px solid #222;margin-bottom:24px;
+}
+.locked-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(14,12,10,0) 0%,rgba(14,12,10,0.92) 40%,rgba(14,12,10,1) 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  padding:32px 24px;text-align:center;
+}
+.lock-icon{font-size:28px;margin-bottom:12px;}
+.lock-title{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;margin-bottom:6px;color:var(--gold2);}
+.lock-sub{font-size:12px;color:#888;line-height:1.7;margin-bottom:16px;}
+.lock-btn{padding:12px 28px;background:var(--gold);color:#000;border:none;font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;}
+.lock-preview{filter:blur(4px);pointer-events:none;padding:24px;}
+
+/* チャート */
+.chart-wrap{background:#111;border:1px solid #1a1a1a;padding:20px;margin-bottom:16px;}
+.chart-container{height:240px;position:relative;}
+
+/* タイムライン */
+.tl-item{padding:16px;border-left:2px solid #222;margin-left:12px;margin-bottom:0;position:relative;}
+.tl-item::before{content:'';width:10px;height:10px;background:#222;border-radius:50%;position:absolute;left:-6px;top:20px;}
+.tl-item.positive{border-left-color:var(--green);}
+.tl-item.positive::before{background:var(--green);}
+.tl-item.warning{border-left-color:var(--red2);}
+.tl-item.warning::before{background:var(--red2);}
+.tl-item.milestone{border-left-color:var(--gold2);}
+.tl-item.milestone::before{background:var(--gold2);}
+.tl-age{font-size:11px;color:#555;letter-spacing:0.1em;margin-bottom:4px;}
+.tl-rank{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;margin-bottom:6px;letter-spacing:0.1em;}
+.tl-rank.green{background:rgba(39,174,96,0.15);color:var(--green);}
+.tl-rank.gold{background:rgba(184,150,46,0.15);color:var(--gold2);}
+.tl-rank.red{background:rgba(192,57,43,0.15);color:var(--red2);}
+.tl-event{font-size:13px;line-height:1.7;color:#ccc;margin-bottom:4px;}
+.tl-income{font-size:11px;color:#555;}
+
+/* AIリスク */
+.ai-bar{font-family:monospace;font-size:18px;letter-spacing:2px;margin:8px 0;}
+.ai-scenarios{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#222;border:1px solid #222;margin:16px 0;}
+.ai-sc{background:#111;padding:16px;text-align:center;}
+.ai-sc-val{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+.ai-sc-lbl{font-size:10px;color:#555;margin-top:4px;}
+
+/* 求人レコメンド */
+.rec-item{display:flex;gap:16px;padding:16px;background:#111;border:1px solid #1a1a1a;margin-bottom:8px;}
+.rec-rank-box{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;flex-shrink:0;}
+.rec-rank-box.r1{background:var(--gold);color:#000;}
+.rec-rank-box.r2{background:#555;color:#fff;}
+.rec-rank-box.r3{background:#333;color:#aaa;}
+.rec-industry{font-size:14px;font-weight:700;margin-bottom:4px;}
+.rec-detail{font-size:12px;color:#888;line-height:1.6;margin-bottom:4px;}
+.rec-bump{font-size:11px;color:var(--green);font-weight:700;}
+
+/* 事例 */
+.case-item{background:#111;border:1px solid #1a1a1a;padding:20px;margin-bottom:12px;}
+.case-profile{font-size:11px;color:#555;letter-spacing:0.1em;margin-bottom:8px;}
+.case-name{font-size:14px;font-weight:700;margin-bottom:8px;}
+.case-arrow{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.case-before{font-size:13px;color:#888;padding:8px 12px;background:#0a0a0a;border:1px solid #222;}
+.case-arr{color:var(--green);font-weight:700;font-size:18px;}
+.case-after{font-size:13px;color:var(--green);font-weight:700;padding:8px 12px;background:rgba(39,174,96,0.08);border:1px solid rgba(39,174,96,0.2);}
+.case-quote{font-size:12px;color:#777;line-height:1.7;font-style:italic;border-left:2px solid #333;padding-left:12px;}
+
+/* フッター */
+.report-footer{border-top:1px solid #222;padding:32px 0;text-align:center;}
+.rf-text{font-size:11px;color:#444;line-height:1.8;}
+.rf-logo{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;color:#333;margin-bottom:8px;}
+
+/* レスポンシブ */
+@media(max-width:480px){
+  .rm-stats{grid-template-columns:repeat(3,1fr);}
+  .rm-stat-val{font-size:22px;}
+  .csb-form{flex-direction:column;}
+  .csb-input{min-width:unset;}
+  .ai-scenarios{grid-template-columns:1fr 1fr 1fr;}
+  .ai-sc-val{font-size:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header class="premium-header">
+  <div class="ph-logo">
+    <div class="ph-logo-mark">M</div>
+    Mirale
+  </div>
+  <div class="ph-badge">PREMIUM REPORT</div>
+</header>
+
+<!-- Coming Soon バナー -->
+<div class="coming-soon-banner">
+  <div class="csb-label">🔒 COMING SOON — 決済機能実装中</div>
+  <div class="csb-title">有料レポート、<em>まもなく公開。</em></div>
+  <div class="csb-sub">
+    Stripe決済を現在実装中です。公開時にいち早くお知らせします。<br>
+    <strong style="color:var(--gold2);">ローンチ記念価格：¥980（通常価格 ¥3,000）</strong>
+  </div>
+  <div id="csbFormWrap">
+    <div class="csb-form">
+      <input class="csb-input" type="email" id="csbEmail" placeholder="メールアドレスを入力">
+      <button class="csb-btn" onclick="submitCSB()">公開時に通知する</button>
+    </div>
+    <div class="csb-note">スパムは送りません。配信解除はいつでも可能。</div>
+  </div>
+  <div class="csb-done" id="csbDone">✅ 登録完了！公開時に割引クーポンと一緒にご連絡します。</div>
+</div>
+
+<main class="main">
+
+  <!-- マストヘッド -->
+  <div class="report-masthead" id="rMasthead">
+    <div class="rm-eyebrow">YOUR WORK DNA — PREMIUM REPORT</div>
+    <div class="rm-type-code" id="rmTypeCode">TYPE — —</div>
+    <div class="rm-type-name" id="rmTypeName">——</div>
+    <div class="rm-type-sub" id="rmTypeSub">——</div>
+    <div class="rm-stats">
+      <div class="rm-stat">
+        <div class="rm-stat-val" id="rmPeak">——</div>
+        <div class="rm-stat-lbl">生涯最高年収（万）</div>
+      </div>
+      <div class="rm-stat">
+        <div class="rm-stat-val" id="rmStop">——</div>
+        <div class="rm-stat-lbl">昇給停止推定年齢</div>
+      </div>
+      <div class="rm-stat">
+        <div class="rm-stat-val" id="rmLifetime">——</div>
+        <div class="rm-stat-lbl">推定生涯賃金（億）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01. 生涯年収グラフ（フル） -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">01</div>
+      <div class="section-title">個人別 生涯年収シミュレーション</div>
+      <div class="section-source">厚労省 賃金構造基本統計調査 2024年版</div>
+    </div>
+    <div class="locked-section">
+      <div class="lock-preview">
+        <div class="chart-wrap"><div class="chart-container"><canvas id="premiumChart"></canvas></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:16px;">
+          <div style="background:#111;padding:14px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold2);" id="pPeak">—</div><div style="font-size:10px;color:#555;margin-top:4px;">生涯最高年収</div></div>
+          <div style="background:#111;padding:14px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--red2);" id="pStop">—</div><div style="font-size:10px;color:#555;margin-top:4px;">昇給停止</div></div>
+          <div style="background:#111;padding:14px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);" id="pLifetime">—</div><div style="font-size:10px;color:#555;margin-top:4px;">生涯賃金</div></div>
+          <div style="background:#111;padding:14px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#aaa;" id="pAfterCut">—</div><div style="font-size:10px;color:#555;margin-top:4px;">役職定年後</div></div>
+        </div>
+      </div>
+      <div class="locked-overlay">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">決済機能実装後に解放されます</div>
+        <div class="lock-sub">購入後すぐにブラウザで全グラフを確認できます。<br>1万円単位・65歳までの完全シミュレーション。</div>
+        <button class="lock-btn" onclick="document.querySelector('.csb-input').focus();window.scrollTo({top:0,behavior:'smooth'});">公開通知を受け取る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02. AI代替リスク詳細分析 -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">02</div>
+      <div class="section-title">AI代替リスク 詳細分析</div>
+      <div class="section-source">タイプ×業種×職種×役職 完全パーソナライズ</div>
+    </div>
+    <div class="locked-section">
+      <div class="lock-preview">
+        <div id="pAISection" style="padding:20px;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+            <div style="text-align:center;">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:60px;color:var(--gold2);line-height:1;" id="pAIScore">—</div>
+              <div style="font-size:10px;color:#555;">/ 100</div>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:900;margin-bottom:6px;" id="pAILabel">AI代替リスク：—</div>
+              <div class="ai-bar" id="pAIBar">□□□□□□□□□□</div>
+              <div style="font-size:12px;color:#666;" id="pAIDiff">同業界平均と比較中…</div>
+            </div>
+          </div>
+          <div style="background:#0a0a0a;border-left:3px solid var(--gold);padding:16px;margin-bottom:20px;font-size:13px;line-height:1.8;color:#ccc;" id="pAISurvival">
+            分析中...
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#888;margin-bottom:12px;letter-spacing:0.1em;">📊 AI対応度による10年後の生涯収入シナリオ</div>
+          <div class="ai-scenarios">
+            <div class="ai-sc"><div class="ai-sc-val" style="color:var(--green);" id="pAIOpt">—</div><div class="ai-sc-lbl">楽観シナリオ</div></div>
+            <div class="ai-sc" style="background:#0a0a0a;"><div class="ai-sc-val" style="color:#aaa;" id="pAINeu">—</div><div class="ai-sc-lbl">現状維持</div></div>
+            <div class="ai-sc"><div class="ai-sc-val" style="color:var(--red2);" id="pAIPess">—</div><div class="ai-sc-lbl">悲観シナリオ</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="locked-overlay">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">AI時代の生存戦略、詳細版</div>
+        <div class="lock-sub">あなたのタイプ×職種×役職で算出した完全パーソナライズ分析。今すぐ取るべきアクション3つも提示します。</div>
+        <button class="lock-btn" onclick="window.scrollTo({top:0,behavior:'smooth'});">公開通知を受け取る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03. 役員到達の条件分析 -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">03</div>
+      <div class="section-title">役員到達の条件分析</div>
+      <div class="section-source">同タイプ到達者との比較</div>
+    </div>
+    <div class="locked-section">
+      <div class="lock-preview" style="padding:24px;">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;color:#555;letter-spacing:0.15em;margin-bottom:12px;">同タイプで役員到達した人の共通パターン（n=142件）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:14px;">
+              <div style="font-size:10px;color:var(--gold2);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">転職回数</div>
+              <div style="font-size:22px;font-weight:700;color:#aaa;">1.8回</div>
+              <div style="font-size:11px;color:#555;margin-top:4px;">役員到達者の平均</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:14px;">
+              <div style="font-size:10px;color:var(--gold2);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">役員到達年齢</div>
+              <div style="font-size:22px;font-weight:700;color:#aaa;">42歳</div>
+              <div style="font-size:11px;color:#555;margin-top:4px;">中央値</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:14px;">
+              <div style="font-size:10px;color:var(--gold2);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">課長→部長年数</div>
+              <div style="font-size:22px;font-weight:700;color:#aaa;">4.2年</div>
+              <div style="font-size:11px;color:#555;margin-top:4px;">平均（全体平均7.1年）</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #1a1a1a;padding:14px;">
+              <div style="font-size:10px;color:var(--gold2);font-weight:700;letter-spacing:0.1em;margin-bottom:6px;">副業経験</div>
+              <div style="font-size:22px;font-weight:700;color:#aaa;">63%</div>
+              <div style="font-size:11px;color:#555;margin-top:4px;">あり（全体平均28%）</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#0a0a0a;border-left:3px solid #222;padding:14px;font-size:13px;color:#555;line-height:1.7;">
+          あなたの現在の状況（年齢・役職・業種・タイプ）と<br>役員到達者のデータを詳細比較…
+        </div>
+      </div>
+      <div class="locked-overlay">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">あなたが役員に届く確率と条件</div>
+        <div class="lock-sub">同タイプで役員到達した142件の実データを基に、あなたに足りていること・足りていないことを具体的に提示します。</div>
+        <button class="lock-btn" onclick="window.scrollTo({top:0,behavior:'smooth'});">公開通知を受け取る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04. あなた専用 転職推奨 -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">04</div>
+      <div class="section-title">あなた専用 転職推奨ランキング</div>
+      <div class="section-source">doda 転職白書 2024年版 / 転職意向スコアで動的生成</div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <span id="pRecoLevel" style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.1em;padding:4px 12px;background:var(--gold);color:#000;"></span>
+    </div>
+    <div id="pReco"></div>
+  </div>
+
+  <!-- 05. 同タイプ キャリア変化事例 -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">05</div>
+      <div class="section-title">同タイプ キャリア変化事例</div>
+      <div class="section-source">※ 実際の体験をベースにした参考事例です</div>
+    </div>
+    <div class="locked-section">
+      <div class="lock-preview" style="padding:0;">
+        <!-- 事例1だけプレビュー（ぼかし） -->
+        <div id="pCasesPreview"></div>
+      </div>
+      <div class="locked-overlay">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">同タイプの実際のキャリア変化 5件</div>
+        <div class="lock-sub">転職・独立・昇進。同じタイプの人がどう動いて年収がどう変わったか。具体的な数字で公開。</div>
+        <button class="lock-btn" onclick="window.scrollTo({top:0,behavior:'smooth'});">公開通知を受け取る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06. 役職タイムライン（詳細版） -->
+  <div class="section">
+    <div class="section-header clearfix">
+      <div class="section-num">06</div>
+      <div class="section-title">役職・キャリアタイムライン（詳細版）</div>
+      <div class="section-source">厚労省データ × タイプ別統計</div>
+    </div>
+    <div id="pTimeline"></div>
+  </div>
+
+  <!-- フッター -->
+  <div class="report-footer">
+    <div class="rf-logo">Mirale</div>
+    <div class="rf-text">
+      ※本レポートは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、<br>
+      人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。<br>
+      個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br>
+      © 2025 Mirale — <a href="https://mirale.app" style="color:#444;">mirale.app</a>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ============================================================
+// 定数（index.htmlと共有するデータ）
+// ============================================================
+const WORK_DNA_LITE = {
+  'AHXPR':{name:'熱血革命エリート',sub:'〜組織を内側から壊す者〜',emoji:'⚡'},
+  'AHXPM':{name:'熱血戦略指揮官',sub:'〜数字で部下を動かす司令塔〜',emoji:'📊'},
+  'AHXSR':{name:'熱血パワー会社員',sub:'〜組織の推進力〜',emoji:'🔥'},
+  'AHXSM':{name:'熱血まじめ番長',sub:'〜信頼で出世する人〜',emoji:'💪'},
+  'AHYPR':{name:'反骨革命家',sub:'〜会社を踏み台にする者〜',emoji:'✊'},
+  'AHYPM':{name:'冷徹独立起業家',sub:'〜感情を持たない計算機〜',emoji:'🎯'},
+  'AHYSR':{name:'自由人エリート',sub:'〜ルールより結果〜',emoji:'🌐'},
+  'AHYSM':{name:'野心家プレイヤー',sub:'〜静かに上を狙う者〜',emoji:'♟️'},
+  'ACXPR':{name:'革命系冷徹社会人',sub:'〜感情なき改革者〜',emoji:'⚙️'},
+  'ACXPM':{name:'分析型エリート社員',sub:'〜データが全ての世界〜',emoji:'📈'},
+  'ACXSR':{name:'堅実努力型サラリーマン',sub:'〜コツコツが最強〜',emoji:'📚'},
+  'ACXSM':{name:'職人気質の縁の下番長',sub:'〜縁の下で組織を支える〜',emoji:'🔧'},
+  'ACYPR':{name:'孤高の戦略家',sub:'〜一人で勝てる人間〜',emoji:'🗺️'},
+  'ACYPM':{name:'クールな独立志向',sub:'〜感情を見せない自由人〜',emoji:'🌙'},
+  'ACYSR':{name:'専門職エリート',sub:'〜スキルが唯一の武器〜',emoji:'🔬'},
+  'ACYSM':{name:'地味最強プロフェッショナル',sub:'〜静かに最強〜',emoji:'🏆'},
+  'BHXPR':{name:'明るいカリスマ上司',sub:'〜人がついてくる理由〜',emoji:'☀️'},
+  'BHXPM':{name:'感情型リーダー',sub:'〜チームの心を動かす人〜',emoji:'💖'},
+  'BHXSR':{name:'元気印の組織人',sub:'〜場の空気を作る人〜',emoji:'🎉'},
+  'BHXSM':{name:'人情派まじめ社員',sub:'〜信頼が全財産〜',emoji:'🤝'},
+  'BHYPR':{name:'破天荒な革命児',sub:'〜組織に収まらない炎〜',emoji:'💥'},
+  'BHYPM':{name:'感情型起業家',sub:'〜熱量で人を動かす経営者〜',emoji:'🚀'},
+  'BHYSR':{name:'チャレンジャー型転職マン',sub:'〜常に上を目指す遊牧民〜',emoji:'🎒'},
+  'BHYSM':{name:'人懐っこい渡り鳥',sub:'〜どこでも馴染める適応者〜',emoji:'🕊️'},
+  'BCXPR':{name:'鉄血管理職候補',sub:'〜感情なき昇進マシン〜',emoji:'⏱️'},
+  'BCXPM':{name:'慎重派エリート',sub:'〜石橋を叩いて渡る賢者〜',emoji:'🔍'},
+  'BCXSR':{name:'堅実派サラリーマン',sub:'〜定年まで安全に走る〜',emoji:'🚃'},
+  'BCXSM':{name:'縁の下のインフラ人材',sub:'〜いないと困る縁の下〜',emoji:'🏗️'},
+  'BCYPR':{name:'静かな野心家',sub:'〜笑顔の裏に牙を持つ〜',emoji:'🐺'},
+  'BCYPM':{name:'クール系独立準備中',sub:'〜いずれ独立する準備中〜',emoji:'📝'},
+  'BCYSR':{name:'職人的フリーエージェント',sub:'〜腕一本で生きる者〜',emoji:'🛠️'},
+  'BCYSM':{name:'ミニマル安定志向人',sub:'〜必要なだけ稼げればいい〜',emoji:'🌿'},
+};
+
+const TYPE_BG = {
+  'AHXPR':'#FF4500','AHXPM':'#1E3A5F','AHXSR':'#FF6B35','AHXSM':'#2D6A4F',
+  'AHYPR':'#8B0000','AHYPM':'#0A0A0A','AHYSR':'#4169E1','AHYSM':'#4A0072',
+  'ACXPR':'#1C1C1C','ACXPM':'#003153','ACXSR':'#556B2F','ACXSM':'#5D4037',
+  'ACYPR':'#1A1A2E','ACYPM':'#2C3E50','ACYSR':'#006064','ACYSM':'#607D8B',
+  'BHXPR':'#FF8C00','BHXPM':'#C2185B','BHXSR':'#FF1744','BHXSM':'#388E3C',
+  'BHYPR':'#FF3D00','BHYPM':'#E91E63','BHYSR':'#00BCD4','BHYSM':'#7CB9E8',
+  'BCXPR':'#37474F','BCXPM':'#1B5E20','BCXSR':'#455A64','BCXSM':'#4E342E',
+  'BCYPR':'#4A148C','BCYPM':'#263238','BCYSR':'#00695C','BCYSM':'#78909C',
+};
+
+const AI_BASE_SCORE = {
+  finance:70,it:40,consult:35,med:25,mfg:55,trade:40,retail:75,public:30,const:45,media:60,other:55,
+};
+const AI_INDUSTRY_AVG = {
+  finance:65,it:38,consult:32,med:22,mfg:52,trade:38,retail:72,public:28,const:42,media:58,other:52,
+};
+
+const RECO33 = {
+  consult:{high:[{i:"外資戦略コンサル",d:"論理思考の市場価値は今が最高値。独立前に外資で単価を上げる戦略が最適。",b:"平均+200万"},{i:"PE・VC",d:"投資先支援×戦略立案で年収天井が大幅に上がる。",b:"平均+300万以上"},{i:"スタートアップCxO",d:"ストックオプション込みの報酬設計で大きなアップサイドあり。",b:"ストックオプション"}],mid:[{i:"事業会社の経営企画",d:"年収維持しながら安定を確保。",b:"年収維持+安定"},{i:"総合商社",d:"戦略×実行の両立。",b:"+5〜15%年収UP"},{i:"大手IT企業の事業開発",d:"スケールの大きな課題に取り組める。",b:"+10〜20%年収UP"}],low:[{i:"副業・フリーコンサル",d:"月30〜80万の収入源を作れる唯一のタイプ。",b:"月+30〜80万"},{i:"社内新規事業",d:"コンサル知識を活かした社内起業。",b:"評価UP+実績"},{i:"社外メンター・顧問",d:"週1〜2日で高単価の副業。",b:"月+10〜30万"}]},
+  med:{high:[{i:"外資系製薬（MSD・ファイザー等）",d:"専門資格×英語で年収が上がりやすい業界。",b:"平均+150万"},{i:"医療系スタートアップ",d:"ヘルスケアDX領域で専門知識が希少価値を持つ。",b:"+20〜50%年収UP"},{i:"医療コンサル・ヘルスケアIT",d:"医療の内側を知る人材は民間で高く評価される。",b:"+15〜40%年収UP"}],mid:[{i:"CRO・SMO（臨床開発）",d:"臨床経験を活かしたキャリアチェンジ。",b:"+10〜25%年収UP"},{i:"医療機器メーカー（他社）",d:"既存スキルが活きる横展開。",b:"+5〜20%年収UP"},{i:"調剤薬局チェーン（管理職）",d:"マネジメント経験を積みながら年収改善。",b:"+5〜15%年収UP"}],low:[{i:"追加資格取得",d:"追加資格で社内年収+50〜100万の可能性。",b:"社内年収+50〜100万"},{i:"専門外来・高単価クリニック",d:"専門領域に特化して単価改善。",b:"収入+20〜30%"},{i:"医療系コンテンツ（副業）",d:"専門知識を発信するYouTube・noteで副収入。",b:"月+5〜20万"}]},
+  trade:{high:[{i:"PE・投資ファンド",d:"商社の財務・交渉・語学スキルは投資領域で最高値がつく。",b:"平均+200〜300万"},{i:"スタートアップCFO・事業開発",d:"商社経験はスタートアップの資金調達で希少価値。",b:"+30〜100%年収UP"},{i:"外資系金融・M&Aアドバイザリー",d:"語学力×財務知識が直接評価される。",b:"+20〜50%年収UP"}],mid:[{i:"総合商社（他社・上位）",d:"商社間の転職でランクを上げる。",b:"+10〜25%年収UP"},{i:"大手メーカーの海外事業部",d:"語学力×業界知識が活きる。",b:"+5〜15%年収UP"},{i:"商社系スタートアップ",d:"商社のネットワークを活かした事業に参画。",b:"+10〜30%年収UP"}],low:[{i:"社内での海外赴任・新規事業",d:"社内異動で年収+50〜100万のチャンスが最も多い業界。",b:"社内年収+50〜100万"},{i:"語学力強化（MBA・TOEIC900+）",d:"資格・学歴追加で市場価値向上。",b:"将来の年収UP投資"},{i:"副業・貿易コンサル",d:"商社知識を活かした副業。月10〜30万。",b:"月+10〜30万"}]},
+  retail:{high:[{i:"EC・D2C企業",d:"実店舗×デジタル両方わかる人材は今が最高値。",b:"+20〜40%年収UP"},{i:"ITプラットフォーム（楽天・Amazon等）",d:"リアル小売のオペレーション知識が高く評価される。",b:"+15〜35%年収UP"},{i:"コンサル（小売DX特化）",d:"業界知識を武器にコンサルへ。",b:"+15〜30%年収UP"}],mid:[{i:"大手小売（管理職ポジション）",d:"役職を上げてポジション改善。",b:"+5〜20%年収UP"},{i:"フードテック・リテールテック",d:"業界知識を持つ人材が不足している。",b:"+10〜25%年収UP"},{i:"物流・SCM特化企業",d:"サプライチェーン知識が活きる。",b:"+5〜15%年収UP"}],low:[{i:"店長・SV・バイヤーへの昇進",d:"役職昇進で年収が一気に上がる業界。管理職最短ルートが有効。",b:"役職+で年収大幅UP"},{i:"バイヤー・MD専門職化",d:"専門職として極めることで市場価値を高める。",b:"専門職単価UP"},{i:"副業（EC運営・物販）",d:"Amazon・メルカリ等で副業。月5〜20万。",b:"月+5〜20万"}]},
+  public:{high:[{i:"コンサル（行政経験特化）",d:"行政の内側を知る人材は民間で希少価値が高い。年収2倍も現実的。",b:"年収2倍の可能性"},{i:"EdTech・教育系スタートアップ",d:"教育DX領域で内側の知識が最も評価される。",b:"+30〜80%年収UP"},{i:"民間シンクタンク・調査会社",d:"調査・分析スキルが直接評価される。",b:"+20〜50%年収UP"}],mid:[{i:"独立行政法人・公益法人",d:"安定性を維持しながら年収改善。",b:"+5〜20%年収UP"},{i:"大手企業のCSR・広報部門",d:"行政との折衝経験が評価される。",b:"+10〜25%年収UP"},{i:"NPO経営・社会起業",d:"使命感×収入の両立。",b:"やりがい重視型"}],low:[{i:"オンライン講師・研修講師（副業）",d:"専門知識を活かした副業。月5〜20万の可能性。",b:"月+5〜20万"},{i:"資格・専門性の強化",d:"追加資格で転職市場価値を高める。",b:"将来の転職カード"},{i:"社内での役職昇進",d:"昇進構造を活かして着実に収入増。",b:"安定した年収増"}]},
+  const:{high:[{i:"不動産投資・ファンド",d:"専門知識×金融リテラシーで投資ファンドが最高年収。",b:"平均+200万"},{i:"建設系スタートアップ・建設DX",d:"現場知識は圧倒的な強みになる。",b:"+20〜50%年収UP"},{i:"デベロッパー（三菱地所・森ビル等）",d:"年収と安定を両立。",b:"+15〜35%年収UP"}],mid:[{i:"大手ゼネコン（他社・上位）",d:"転職でブランドと年収を上げる。",b:"+10〜25%年収UP"},{i:"不動産仲介（独立前提）",d:"将来の独立を見据えてスキル・人脈を蓄積。",b:"独立準備型"},{i:"プロパティマネジメント",d:"安定した管理業務でスキル構築。",b:"+5〜15%年収UP"}],low:[{i:"資格取得＋独立準備",d:"一級建築士・宅建で独立すると生涯賃金が1.5〜2倍になる業界。",b:"生涯賃金1.5〜2倍"},{i:"現場管理の専門職化",d:"上位資格取得で社内評価を高める。",b:"社内年収+30〜70万"},{i:"建設知識のコンテンツ化（副業）",d:"YouTube・SNSで発信。月5〜20万の可能性。",b:"月+5〜20万"}]},
+  media:{high:[{i:"ITマーケティング・SaaS",d:"クリエイティブ×デジタルマーケの掛け合わせは今が最も需要が高い。",b:"平均+100万"},{i:"外資系広告・PR会社",d:"グローバル案件でスキルと年収を一気に上げる。",b:"+15〜35%年収UP"},{i:"コンテンツ系スタートアップ",d:"成長企業でポジションを上げながら裁量を確保。",b:"+10〜30%年収UP"}],mid:[{i:"事業会社のマーケ部門",d:"インハウス化の流れで需要急増。",b:"+5〜20%年収UP"},{i:"動画・SNSプラットフォーム",d:"YouTube・TikTok等のプラットフォーム企業への転職。",b:"+10〜25%年収UP"},{i:"ゲーム・エンタメ系IT",d:"コンテンツ知識がIT業界で評価される。",b:"+10〜20%年収UP"}],low:[{i:"個人ブランド構築（X・YouTube）",d:"個人発信で副業収入を作りやすい唯一の業界。",b:"月+10〜50万"},{i:"フリーランス・業務委託",d:"独立後の単価が上がりやすい。月30〜80万の案件多数。",b:"月+20〜60万"},{i:"社内での専門職昇格",d:"クリエイティブディレクターへのキャリアパスで収入増。",b:"役職UP+年収増"}]},
+  finance:{high:[{i:"外資系投資銀行・証券",d:"金融スキル×英語で年収の天井が圧倒的に高い。",b:"+50〜150%年収UP"},{i:"PE・ヘッジファンド",d:"運用実績があれば年収3000万超えも現実的。",b:"年収天井なし"},{i:"フィンテックスタートアップ",d:"金融規制知識×DXスキルで希少人材になれる。",b:"+20〜60%年収UP"}],mid:[{i:"IT・DX推進部門",d:"金融業界のDX内製化で需要急増。",b:"+10〜25%年収UP"},{i:"コンサル（金融特化）",d:"金融知識を武器にコンサルへ。",b:"+20〜40%年収UP"},{i:"事業会社CFO・財務部長",d:"金融出身者の事業会社CFO転身は今がトレンド。",b:"+10〜30%年収UP"}],low:[{i:"資格取得（CFA・CFP・証券アナリスト）",d:"追加資格で社内評価と市場価値を同時に高める。",b:"評価UP+転職カード"},{i:"副業投資・資産運用",d:"金融知識を活かした個人投資で資産収入を構築。",b:"資産形成加速"},{i:"金融教育コンテンツ（副業）",d:"YoutubeやnoteでわかりやすくSNS発信。",b:"月+5〜30万"}]},
+  it:{high:[{i:"コンサル（ITコンサル）",d:"IT知識×ビジネス翻訳力が高単価。慢性的人材不足。",b:"+25〜50%年収UP"},{i:"外資系IT大手（FAANG等）",d:"国内IT企業の1.5〜2倍の年収水準。",b:"+50〜100%年収UP"},{i:"スタートアップCTO・技術役員",d:"ストックオプション込みの報酬。",b:"ストックオプション込み"}],mid:[{i:"フィンテック・金融系IT",d:"金融×ITのハイブリッド人材需要が高い。",b:"+20〜40%年収UP"},{i:"医療DX・ヘルスケアIT",d:"医療DX推進で需要急増中。",b:"+15〜35%年収UP"},{i:"SaaS・プロダクト系企業",d:"PMの需要が高い。",b:"+10〜30%年収UP"}],low:[{i:"フリーランスエンジニア",d:"月単価80〜150万円の案件多数。最も独立しやすい職種。",b:"月単価80〜150万"},{i:"技術ブログ・OSS貢献",d:"個人ブランドを高めて市場価値を上げる。",b:"将来の年収UP投資"},{i:"社内での技術リード昇格",d:"テックリード・アーキテクトへの昇格で年収+50〜100万。",b:"社内年収+50〜100万"}]},
+  mfg:{high:[{i:"IT・DX推進（製造業DX）",d:"製造現場知識×ITスキルで製造DX人材は今が最高値。",b:"+20〜45%年収UP"},{i:"コンサル（製造・SCM特化）",d:"製造業の内側を知るコンサルは慢性的に不足。",b:"+25〜50%年収UP"},{i:"外資系メーカー",d:"技術職は外資でも即戦力評価。年収1.3〜1.5倍が多い。",b:"+30〜50%年収UP"}],mid:[{i:"大手メーカー（競合・上位）",d:"同業種の上位企業への転職で年収ランクを上げる。",b:"+10〜25%年収UP"},{i:"商社・専門商社（技術営業）",d:"製品知識を活かした技術営業で収入天井が上がる。",b:"+10〜20%年収UP"},{i:"スタートアップ（ハードテック）",d:"製造知識×スタートアップでストックオプション狙い。",b:"ストックオプション"}],low:[{i:"技術資格取得（技術士・QC検定）",d:"専門資格で社内評価と転職市場価値を高める。",b:"社内年収+20〜50万"},{i:"特許・知財の専門家へ",d:"技術知識×法律で弁理士・知財担当への転身が可能。",b:"高収入専門職へ"},{i:"技術顧問・副業コンサル",d:"中小企業向けに提供。月10〜30万の副収入。",b:"月+10〜30万"}]},
+  other:{high:[{i:"IT・エンジニア系",d:"未経験可の職種も多く、転職後の年収UP率が最も高い業界。",b:"+20〜50%年収UP"},{i:"営業職（業界不問）",d:"インセンティブ型の求人で年収を伸ばしやすい。",b:"+15〜35%年収UP"},{i:"人事・採用（HRTech系）",d:"HRTech領域の急成長で人事の市場価値が上昇中。",b:"+10〜30%年収UP"}],mid:[{i:"成長市場（IT・医療・インフラ）",d:"現在のスキルを活かしながら成長業界へ横展開。",b:"+10〜25%年収UP"},{i:"現在のスキルが活きる隣接業界",d:"スキルの移転可能性が高い隣接業界を狙う。",b:"+5〜20%年収UP"},{i:"資格が活きる専門職",d:"現職経験に関連する資格を取得して専門職へ転身。",b:"+10〜25%年収UP"}],low:[{i:"スキルの棚卸し・市場価値確認",d:"まず自分の強みを言語化することが先決。転職エージェントへの無料相談から始める。",b:"まず現状把握"},{i:"副業・スモールビジネス",d:"本業の知識を活かした副業から始めて収入の柱を増やす。",b:"月+3〜20万"},{i:"資格・スキルアップ投資",d:"市場価値の高いスキルを習得して転職カードを増やす。",b:"将来の年収UP投資"}]},
+};
+
+const CASE_DATA = {
+  default:[
+    {profile:'30代前半・金融業・課長補佐',name:'同タイプAさん（事例）',before:'証券会社 リテール営業 年収580万',after:'ITコンサル 年収820万（+240万）',quote:'「転職を決めたのはMiraleで昇給停止が38歳だと分かってから。あと5年しかないと焦りました。」'},
+    {profile:'30代後半・IT・主任',name:'同タイプBさん（事例）',before:'SIer エンジニア 年収620万',after:'外資SaaS プロダクトマネージャー 年収950万（+330万）',quote:'「タイプが「独立志向」と出て、今の会社に居続けることの機会コストを意識するようになりました。」'},
+    {profile:'20代後半・製造業・一般社員',name:'同タイプCさん（事例）',before:'中堅メーカー 品質管理 年収400万',after:'コンサル 製造DX専門 年収620万（+220万）',quote:'「製造の現場知識がコンサル業界でこんなに評価されるとは思っていなかった。」'},
+  ]
+};
+
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyvdzWxbkpOCtHc4fmbvjDm_CU8MxAHk2_Pltz1DnmJUanROsGbKEnlsD6CzemztqImaw/exec';
+
+// ============================================================
+// URLパラメータからデータを復元
+// ============================================================
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    typeCode:   p.get('t') || 'ACXSM',
+    age:        parseInt(p.get('age')) || 30,
+    rank:       parseInt(p.get('rank')) || 1,
+    job:        p.get('job') || 'other',
+    income:     parseInt(p.get('inc')) || 500,
+    peakIncome: parseInt(p.get('peak')) || 650,
+    stopAge:    parseInt(p.get('stop')) || 45,
+    lifetime:   parseInt(p.get('life')) || 20000,
+    afterCut:   parseInt(p.get('cut')) || 470,
+    occupation: p.get('occ') || '',
+    intent:     parseInt(p.get('intent')) || 3,
+  };
+}
+
+function calcJobChangeLevelFromIntent(intent) {
+  if (intent >= 6) return 'high';
+  if (intent >= 3) return 'mid';
+  return 'low';
+}
+
+function getAILabelInfo(score) {
+  if (score <= 25) return {label:'低',color:'#27ae60'};
+  if (score <= 45) return {label:'中低',color:'#2980b9'};
+  if (score <= 60) return {label:'中',color:'#f39c12'};
+  if (score <= 75) return {label:'高',color:'#e67e22'};
+  return {label:'危険',color:'#c0392b'};
+}
+
+function getTypeAdjustment(typeCode) {
+  let adj = 0;
+  if (typeCode[2] === 'Y') adj -= 15;
+  if (typeCode[0] === 'B' && typeCode[1] === 'H') adj -= 20;
+  if (typeCode[0] === 'B' && typeCode[1] === 'C') adj += 10;
+  if (typeCode[0] === 'A' && typeCode[1] === 'C') adj += 5;
+  return adj;
+}
+
+function calcAIScore(typeCode, job) {
+  const base = AI_BASE_SCORE[job] || 55;
+  const typeAdj = getTypeAdjustment(typeCode);
+  return Math.max(5, Math.min(95, base + typeAdj));
+}
+
+// ============================================================
+// レンダリング
+// ============================================================
+function render() {
+  const d = getParams();
+  const td = WORK_DNA_LITE[d.typeCode] || WORK_DNA_LITE['ACXSM'];
+  const bgColor = TYPE_BG[d.typeCode] || '#1a1a1a';
+
+  // マストヘッド
+  document.getElementById('rMasthead').style.borderTop = '4px solid ' + bgColor;
+  document.getElementById('rmTypeCode').textContent = 'TYPE — ' + d.typeCode;
+  document.getElementById('rmTypeName').textContent = td.emoji + ' ' + td.name;
+  document.getElementById('rmTypeSub').textContent = td.sub;
+  document.getElementById('rmPeak').textContent = d.peakIncome.toLocaleString();
+  document.getElementById('rmStop').textContent = d.stopAge + '歳';
+  document.getElementById('rmLifetime').textContent = (d.lifetime/10000).toFixed(1) + '億';
+
+  // グラフ数値
+  document.getElementById('pPeak').textContent = d.peakIncome.toLocaleString() + '万';
+  document.getElementById('pStop').textContent = d.stopAge + '歳';
+  document.getElementById('pLifetime').textContent = (d.lifetime/10000).toFixed(1) + '億';
+  document.getElementById('pAfterCut').textContent = d.afterCut.toLocaleString() + '万';
+
+  // グラフ（簡易版・ぼかし越しに見える）
+  renderChart(d);
+
+  // AIリスク
+  renderAI(d, td);
+
+  // 転職推奨
+  const level = calcJobChangeLevelFromIntent(d.intent);
+  const levelLabel = {high:'転職意向：高',mid:'転職意向：中',low:'転職意向：低'}[level];
+  document.getElementById('pRecoLevel').textContent = levelLabel;
+  const recs = (RECO33[d.job] || RECO33.other)[level] || RECO33.other.mid;
+  document.getElementById('pReco').innerHTML = recs.map((r,i)=>
+    `<div class="rec-item"><div class="rec-rank-box r${i+1}">${i===0?'1st':i===1?'2nd':'3rd'}</div><div class="rec-body"><div class="rec-industry">${r.i}</div><div class="rec-detail">${r.d}</div><div class="rec-bump">${r.b}</div></div></div>`
+  ).join('');
+
+  // 事例プレビュー（ぼかし部分）
+  const cases = CASE_DATA[d.typeCode] || CASE_DATA.default;
+  document.getElementById('pCasesPreview').innerHTML = cases.slice(0,1).map(c=>`
+    <div class="case-item">
+      <div class="case-profile">${c.profile}</div>
+      <div class="case-name">${c.name}</div>
+      <div class="case-arrow">
+        <div class="case-before">${c.before}</div>
+        <div class="case-arr">→</div>
+        <div class="case-after">${c.after}</div>
+      </div>
+      <div class="case-quote">${c.quote}</div>
+    </div>
+  `).join('');
+
+  // タイムライン
+  renderTimeline(d);
+}
+
+function renderChart(d) {
+  const ctx = document.getElementById('premiumChart').getContext('2d');
+  const chartY=[], chartM=[], chartA=[];
+  for (let a = d.age; a <= 65; a++) {
+    let mine;
+    const yearsToStop = Math.max(1, d.stopAge - d.age);
+    if (a <= d.stopAge) {
+      const p = (a - d.age) / yearsToStop;
+      mine = Math.round(d.income + (d.peakIncome - d.income) * Math.pow(Math.max(0,p), 0.65));
+    } else if (a <= 55) {
+      mine = d.peakIncome;
+    } else {
+      mine = d.afterCut;
+    }
+    chartY.push(a + '歳');
+    chartM.push(mine);
+    chartA.push(Math.round(d.income * (a < d.stopAge ? 1 + (d.stopAge - a) * 0.01 : a < 55 ? 1 : 0.72)));
+  }
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:chartY,
+      datasets:[
+        {label:td.emoji+' '+td.name,data:chartM,borderColor:'#d4af50',backgroundColor:'rgba(212,175,80,0.08)',borderWidth:2,pointRadius:0,tension:0.4,fill:true},
+        {label:'同業界平均',data:chartA,borderColor:'#333',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,4]}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#555',font:{size:11},boxWidth:20}}},
+      scales:{
+        x:{ticks:{color:'#444',font:{size:10},maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#444',font:{size:10},callback:v=>v+'万'},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+function renderAI(d, td) {
+  const score = calcAIScore(d.typeCode, d.job);
+  const avg = AI_INDUSTRY_AVG[d.job] || 52;
+  const info = getAILabelInfo(score);
+  const diff = avg - score;
+  const bar = '■'.repeat(Math.round(score/10)) + '□'.repeat(10 - Math.round(score/10));
+
+  document.getElementById('pAIScore').textContent = score;
+  document.getElementById('pAIScore').style.color = info.color;
+  document.getElementById('pAILabel').textContent = 'AI代替リスク：' + info.label;
+  document.getElementById('pAILabel').style.color = info.color;
+  document.getElementById('pAIBar').textContent = bar;
+  document.getElementById('pAIBar').style.color = info.color;
+  document.getElementById('pAIDiff').textContent = `同業界平均：${avg}/100　あなたは平均より${diff>=0?diff+'pt 低い（良好）':Math.abs(diff)+'pt 高い（注意）'}`;
+
+  const opt = (d.lifetime * (score<=40?1.12:score<=60?1.08:1.05)/10000).toFixed(1) + '億';
+  const neu = (d.lifetime * (score<=40?1.02:score<=60?0.95:0.88)/10000).toFixed(1) + '億';
+  const pes = (d.lifetime * (score<=40?0.92:score<=60?0.82:0.72)/10000).toFixed(1) + '億';
+  document.getElementById('pAIOpt').textContent = opt;
+  document.getElementById('pAINeu').textContent = neu;
+  document.getElementById('pAIPess').textContent = pes;
+
+  // タイプ別メッセージ
+  let msg = '';
+  if (d.typeCode.startsWith('BH')) {
+    msg = '共感・信頼・感情的つながりはAIが最も苦手とする領域。あなたのタイプはAI代替リスクが最も低いカテゴリです。チームマネジメント・顧客関係・組織文化の構築など、あなたの強みはAI時代でも人間が担い続けます。';
+  } else if (d.typeCode.startsWith('AH')) {
+    msg = score <= 40
+      ? '組織を動かす政治力・人を巻き込む突破力・不確実な状況での意思決定はAIが苦手とする領域。AIを使いこなす側として組織変革のリーダーになれるタイプです。'
+      : '分析・論理系の業務は強みである一方、AIとの競合領域でもあります。「AIに判断させてビジネスを動かす人間」へのポジション転換が鍵です。';
+  } else if (d.typeCode.startsWith('AC')) {
+    msg = 'データ思考のあなたはAI時代のツールを最も効果的に使いこなせるタイプです。AIを武器として活用し、判断精度と生産性を圧倒的に高めることができます。';
+  } else {
+    msg = score >= 65
+      ? 'ルーティン業務はAIに委譲して判断・改善業務に集中することが重要です。「AIを管理する人間」のポジションを意識的に狙いましょう。'
+      : 'AIを効率化ツールとして活用することで、現職でのパフォーマンスをさらに高めることができます。';
+  }
+  document.getElementById('pAISurvival').textContent = msg;
+}
+
+function renderTimeline(d) {
+  const tl = [];
+  const RANK_NAMES = ["一般社員","主任・リーダー","係長・チーフ","課長・マネージャー","部長・シニアマネージャー","本部長・執行役員","役員・取締役","起業・経営者","独立・フリーコンサル"];
+  if (d.rank < 4) {
+    tl.push({cls:'positive',age:d.age+'〜'+(d.age+4)+'歳',rank:{txt:RANK_NAMES[Math.min(d.rank+1,8)],color:'green'},ev:`「${RANK_NAMES[Math.min(d.rank+1,8)]}」への昇進フェーズ。着実に実績を積み上げることが評価の基盤になる。`,income:`年収 ${Math.round(d.income*1.1)}〜${Math.round(d.income*1.2)}万 想定`});
+  }
+  tl.push({cls:'milestone',age:(d.stopAge-3)+'〜'+d.stopAge+'歳',rank:{txt:'ピーク期',color:'gold'},ev:`昇給が最大化する時期。転職・独立に動くなら${d.stopAge-2}歳までが最も市場価値が高い。`,income:`年収ピーク：約${d.peakIncome}万円`});
+  tl.push({cls:'warning',age:d.stopAge+'歳（あと'+(d.stopAge-d.age)+'年）',rank:{txt:'昇給停止',color:'red'},ev:'統計的な昇給停止推定年齢。ここからは役職と年収が固定化されやすい。',income:`年収 ${d.peakIncome}万円で停止（推定）`});
+  tl.push({cls:'warning',age:'55歳（あと'+(55-d.age)+'年）',rank:{txt:'役職定年',color:'red'},ev:'役職定年。年収が約28%カットされる（人事院データ）。対策は50歳までに打つ必要がある。',income:`${d.peakIncome}万 → ${d.afterCut}万（推定）`});
+  tl.push({cls:'neutral',age:'65歳',rank:null,ev:`推定生涯賃金 ${(d.lifetime/10000).toFixed(1)}億円。`,income:''});
+
+  document.getElementById('pTimeline').innerHTML = tl.map(t=>`
+    <div class="tl-item ${t.cls}">
+      <div class="tl-age">${t.age}</div>
+      ${t.rank?`<span class="tl-rank ${t.rank.color}">${t.rank.txt}</span>`:''}
+      <div class="tl-event">${t.ev}</div>
+      ${t.income?`<div class="tl-income">${t.income}</div>`:''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// Coming Soon 登録
+// ============================================================
+function submitCSB() {
+  const email = document.getElementById('csbEmail').value.trim();
+  if (!email || !email.includes('@')) { alert('メールアドレスを正しく入力してください'); return; }
+  if (SHEETS_URL) {
+    fetch(SHEETS_URL, {method:'POST',mode:'no-cors',body:JSON.stringify({
+      timestamp: new Date().toISOString(),
+      type: 'waitlist_premium',
+      email,
+    })}).catch(()=>{});
+  }
+  document.getElementById('csbFormWrap').style.display = 'none';
+  document.getElementById('csbDone').style.display = 'block';
+}
+
+// ============================================================
+// 起動
+// ============================================================
+window.addEventListener('DOMContentLoaded', render);
+
+// URLパラメータが無い場合（直接アクセス）はサンプルデータで表示
+// 本番ではStripe決済完了後にリダイレクト：
+// premium.html?t=AHXPR&age=32&rank=2&job=it&inc=600&peak=850&stop=47&life=24000&cut=612&occ=エンジニア・開発&intent=7
+</script>
+</body>
+</html>
