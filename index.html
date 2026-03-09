@@ -779,6 +779,44 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 // 実在データソース（国税庁・厚労省・人事院 公開統計）
 // ============================================================
 // 出典: 厚労省「賃金構造基本統計調査」2024年版 産業別・規模別
+// ============================================================
+// 厚労省賃金データ（salary_data.jsonから非同期ロード）
+// 出典: 厚生労働省 令和5年賃金構造基本統計調査
+// ============================================================
+let salaryData = null;
+fetch('salary_data.json')
+  .then(r => r.json())
+  .then(d => { salaryData = d; })
+  .catch(() => { salaryData = null; }); // 読み込み失敗時はフォールバック
+
+// 年齢に最も近いキーの業界平均年収を返す
+function getSalaryAvgByAge(job, age) {
+  if (!salaryData) return null;
+  const ind = salaryData.by_industry[job];
+  if (!ind) return null;
+  const ages = Object.keys(ind.avg_by_age).map(Number).sort((a,b)=>a-b);
+  let closest = ages[0];
+  for (const a of ages) {
+    if (Math.abs(a - age) < Math.abs(closest - age)) closest = a;
+  }
+  return ind.avg_by_age[String(closest)];
+}
+
+// 年齢別の業界平均ラインを配列で返す（グラフ用）
+function getSalaryAvgLine(job, startAge, endAge) {
+  const result = [];
+  for (let a = startAge; a <= endAge; a++) {
+    const v = getSalaryAvgByAge(job, a);
+    if (v !== null) {
+      // 55歳以降は役職定年28%カット
+      result.push(a >= 55 ? Math.round(v * 0.72) : v);
+    } else {
+      result.push(null);
+    }
+  }
+  return result;
+}
+
 const JOB_DATA = {
   finance: { base:682, ceil:1380, avgGrowthRate:1.028, source:'厚労省賃金構造統計2024/金融業' },
   it:      { base:618, ceil:1250, avgGrowthRate:1.031, source:'厚労省賃金構造統計2024/情報通信業' },
@@ -1581,7 +1619,10 @@ function calcIncome(typeCode){
   const totalGrowth=peakIncome-currentIncome;
   let lifetime=0;
   const chartY=[],chartM=[],chartA=[];
-  const avgIncome=Math.round(jd.base*sizeMult);
+  // 厚労省データがあれば年齢別実データを使用、なければJOB_DATAのbaseで代替
+  const mhlwAvg = getSalaryAvgByAge(profile.job, age);
+  const avgIncome = mhlwAvg ? mhlwAvg : Math.round(jd.base*sizeMult);
+  const useMhlw = !!mhlwAvg;
 
   for(let a=age;a<=65;a++){
     let mine;
@@ -1597,12 +1638,17 @@ function calcIncome(typeCode){
     lifetime+=mine;
     chartY.push(a+'歳');
     chartM.push(mine);
-    chartA.push(Math.round(avgIncome*(a<43?1+(43-a)*jd.avgGrowthRate*0.01:a<55?1:0.72)));
+    // 厚労省データがあれば年齢別実データ、なければ従来ロジック
+    const mhlwA = useMhlw ? getSalaryAvgByAge(profile.job, a) : null;
+    chartA.push(mhlwA
+      ? (a >= 55 ? Math.round(mhlwA * 0.72) : mhlwA)
+      : Math.round(avgIncome*(a<43?1+(43-a)*jd.avgGrowthRate*0.01:a<55?1:0.72)));
   }
   lifetime=Math.round(lifetime/10000)*10000;
   const diff=currentIncome-avgIncome;
   const diffStr=(diff>=0?'+':'')+diff+'万';
-  return{stopAge,peakIncome,afterCut,lifetime,diffStr,chartY,chartM,chartA,avgIncome,maxRankName,maxRankScore,speedFinal,currentRank,source:jd.source};
+  const dataSource = useMhlw ? '厚生労働省 令和5年賃金構造基本統計調査' : jd.source;
+  return{stopAge,peakIncome,afterCut,lifetime,diffStr,chartY,chartM,chartA,avgIncome,maxRankName,maxRankScore,speedFinal,currentRank,source:dataSource,useMhlw};
 }
 
 // ============================================================
@@ -1715,6 +1761,9 @@ function renderFullResult(){
   $('rAfterCut').textContent=inc.afterCut.toLocaleString();
   $('rLifetime').textContent=(inc.lifetime/10000).toFixed(1)+'億';
   $('rVsAvg').textContent=inc.diffStr;
+  // 厚労省データ使用時は「同業界平均」ラベルを更新
+  const vsAvgLabel = document.querySelector('#rVsAvg + .data-lbl') || document.querySelector('[id="rVsAvg"]')?.closest('.data-cell')?.querySelector('.data-lbl');
+  if (vsAvgLabel) vsAvgLabel.textContent = inc.useMhlw ? '同業界平均との比較（厚労省実データ）' : '同業界平均との比較';
 
   if(chartInst)chartInst.destroy();
   const ctx=$('myChart').getContext('2d');
