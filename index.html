@@ -395,6 +395,11 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <div class="form-hint source-badge">国税庁 法人番号公表サイト APIより候補を取得</div>
     <input type="hidden" id="p-company-id" value="">
     <input type="hidden" id="p-company-normalized" value="">
+    <input type="hidden" id="p-company-avg-income" value="">
+    <input type="hidden" id="p-company-paid-leave" value="">
+    <input type="hidden" id="p-company-overtime" value="">
+    <input type="hidden" id="p-company-turnover" value="">
+    <input type="hidden" id="p-company-industry" value="">
   </div>
   <div class="form-row">
     <label class="form-label">現在の年収（万円）<em>*</em></label>
@@ -441,6 +446,38 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     </select>
   </div>
   <div class="form-row">
+    <label class="form-label">月の残業時間（平均）<span style="font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;">診断精度に影響します</span></label>
+    <select id="p-overtime">
+      <option value="5">5時間以下</option>
+      <option value="10">5〜10時間</option>
+      <option value="20" selected>10〜20時間</option>
+      <option value="30">20〜30時間</option>
+      <option value="40">30〜40時間</option>
+      <option value="50">40時間以上</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label class="form-label">有給消化日数（年間）<span style="font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;">日本の平均は約10日</span></label>
+    <select id="p-paidleave">
+      <option value="3">3日以下</option>
+      <option value="5">4〜5日</option>
+      <option value="8">6〜8日</option>
+      <option value="10" selected>9〜10日</option>
+      <option value="13">11〜13日</option>
+      <option value="15">14日以上（フル消化）</option>
+    </select>
+  </div>
+  <div class="form-row">
+    <label class="form-label">今の仕事の満足度<span style="font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;">正直に選んでください</span></label>
+    <select id="p-satisfaction">
+      <option value="2">😫 かなり不満（2点）</option>
+      <option value="4">😞 やや不満（4点）</option>
+      <option value="6" selected>😐 どちらとも言えない（6点）</option>
+      <option value="8">🙂 まあ満足（8点）</option>
+      <option value="10">😄 とても満足（10点）</option>
+    </select>
+  </div>
+  <div class="form-row">
     <label class="form-label">最終学歴</label>
     <select id="p-edu">
       <option value="univ">大学卒</option>
@@ -458,12 +495,12 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
   <div class="login-box">
     <div class="login-title">診断結果を保存する</div>
     <div class="login-sub">メールアドレスを登録すると、診断結果の再閲覧・今後の追加診断（投資・結婚・健康）の回答保存ができます。<br>登録は無料です。</div>
-    <input class="login-input" type="email" id="l-email" placeholder="メールアドレスを入力">
+    <input class="login-input" type="email" id="l-email" placeholder="メールアドレスを入力" oninput="checkLoginBtn()">
     <div class="consent-row">
-      <input type="checkbox" id="consent-tos">
-      <label for="consent-tos"><a href="#" onclick="alert('利用規約はサービス公開時に掲載予定です')">利用規約</a>および<a href="#" onclick="alert('プライバシーポリシーはサービス公開時に掲載予定です')">プライバシーポリシー</a>に同意します</label>
+      <input type="checkbox" id="consent-tos" onchange="checkLoginBtn()">
+      <label for="consent-tos"><a href="terms.html" target="_blank">利用規約</a>および<a href="privacy.html" target="_blank">プライバシーポリシー</a>に同意します</label>
     </div>
-    <button class="login-btn" onclick="loginEmail()">登録して診断を始める →</button>
+    <button class="login-btn" id="loginBtn" onclick="loginEmail()" disabled style="opacity:0.4;cursor:not-allowed;">登録して診断を始める →</button>
     <span class="login-skip" onclick="skipLogin()">登録せずに続ける（スキップ）</span>
   </div>
 </section>
@@ -776,12 +813,8 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 // ============================================================
-// 実在データソース（国税庁・厚労省・人事院 公開統計）
 // ============================================================
-// 出典: 厚労省「賃金構造基本統計調査」2024年版 産業別・規模別
 // ============================================================
-// 厚労省賃金データ（salary_data.jsonから非同期ロード）
-// 出典: 厚生労働省 令和5年賃金構造基本統計調査
 // ============================================================
 let salaryData = null;
 fetch('salary_data.json')
@@ -789,7 +822,6 @@ fetch('salary_data.json')
   .then(d => { salaryData = d; })
   .catch(() => { salaryData = null; }); // 読み込み失敗時はフォールバック
 
-// 年齢に最も近いキーの業界平均年収を返す
 function getSalaryAvgByAge(job, age) {
   if (!salaryData) return null;
   const ind = salaryData.by_industry[job];
@@ -802,13 +834,11 @@ function getSalaryAvgByAge(job, age) {
   return ind.avg_by_age[String(closest)];
 }
 
-// 年齢別の業界平均ラインを配列で返す（グラフ用）
 function getSalaryAvgLine(job, startAge, endAge) {
   const result = [];
   for (let a = startAge; a <= endAge; a++) {
     const v = getSalaryAvgByAge(job, a);
     if (v !== null) {
-      // 55歳以降は役職定年28%カット
       result.push(a >= 55 ? Math.round(v * 0.72) : v);
     } else {
       result.push(null);
@@ -831,21 +861,14 @@ const JOB_DATA = {
   other:   { base:459, ceil:750,  avgGrowthRate:1.018, source:'国税庁民間給与実態統計調査2023' },
 };
 
-// 出典: 人事院「民間企業給与実態調査」2024年 企業規模別給与水準
 const SIZE_MULT = { large:1.158, mid:1.0, small:0.872, startup:1.082, self:0.951 };
 
-// 出典: 人事院「民間企業給与実態調査」2024年 学歴別初任給・賃金格差
 const EDU_ADD = { highschool:-28, college:-12, univ:0, grad:22 };
 
-// 出典: 人事院「民間企業給与実態調査」2024年 役職別賃金倍率
-// RANK index: 0=一般, 1=主任, 2=係長, 3=課長, 4=部長, 5=本部長, 6=役員, 7=起業家, 8=独立・フリーコンサル
-// プルダウン value="0"〜"7" + "7"=起業家 に対応
 const RANK_MULT = [1.0, 1.11, 1.24, 1.44, 1.74, 2.18, 2.76, 3.48, 3.48];
 const RANK_NAMES = ["一般社員","主任・リーダー","係長・チーフ","課長・マネージャー","部長・シニアマネージャー","本部長・執行役員","役員・取締役","起業・経営者","独立・フリーコンサル"];
 
 // ============================================================
-// 33パターン おすすめ業種データ（業種×転職意向 3段階）
-// 出典: doda「転職白書」2024年版 / リクルートワークス「転職実態調査」2024年
 // ============================================================
 const RECO33 = {
   consult: {
@@ -1037,7 +1060,6 @@ const RECO33 = {
   },
 };
 
-// 転職意向レベルを判定する関数（high/mid/low）
 function calcJobChangeLevel() {
   const intent = calcJobChangeIntent(); // 0〜10
   if (intent >= 6) return 'high';
@@ -1046,59 +1068,41 @@ function calcJobChangeLevel() {
 }
 
 // ============================================================
-// AIリスクスコア計算エンジン
 // ============================================================
-// ベーススコア（業種別）
 const AI_BASE_SCORE = {
   finance: 70, it: 40, consult: 35, med: 25, mfg: 55,
   trade: 40, retail: 75, public: 30, const: 45, media: 60, other: 55,
 };
-// 業種別平均スコア（比較用）
 const AI_INDUSTRY_AVG = {
   finance: 65, it: 38, consult: 32, med: 22, mfg: 52,
   trade: 38, retail: 72, public: 28, const: 42, media: 58, other: 52,
 };
-// タイプ補正（5文字目：R=独立/M=組織、2文字目：H=冷徹/C=感情、5文字目含む全体）
 function getTypeAdjustment(typeCode) {
   let adj = 0;
-  // Y系（独立・起業型）：-15
   if (typeCode[2] === 'Y') adj -= 15;
-  // BH系（感情・人間関係型）：-20
   if (typeCode[0] === 'B' && typeCode[1] === 'H') adj -= 20;
-  // BC系（安定・堅実型）：+10
   if (typeCode[0] === 'B' && typeCode[1] === 'C') adj += 10;
-  // AC系（分析型）：+5
   if (typeCode[0] === 'A' && typeCode[1] === 'C') adj += 5;
   return adj;
 }
-// 役職補正
 function getRankAdjustment(rank) {
   if (rank >= 6) return -20; // 経営層・役員
   if (rank >= 4) return -10; // 管理職
   if (rank <= 1) return +10; // 一般社員
   return 0;
 }
-// 職種別補正
 const OCCUPATION_AI_RISK = {
-  // IT系
   'エンジニア・開発': -15, 'プロダクトマネージャー': -10, 'インフラ・セキュリティ': -5,
   'データ・アナリスト': +20, 'マーケティング': +10, '営業・セールス': -10,
-  // 金融
   'トレーダー・ディーラー': +25, 'アナリスト・調査': +20, '法人営業・リテール営業': -10,
   '保険・アクチュアリー': +30, 'システム・IT部門': -5,
-  // 広告・メディア
   'デジタル広告運用・アナリスト': +30, '編集・コンテンツ制作': +20,
   'クリエイティブ・デザイン': +15, '営業・アカウント': -15, 'プランニング・ストラテジー': -5,
-  // コンサル
   '戦略コンサルタント': -20, 'ITコンサルタント': -10, '財務・M&Aアドバイザー': -5,
   '調査・リサーチ': +15,
-  // 医療
   '医師・薬剤師・技師': -25, 'MR・医療営業': +10, '臨床開発・CRO': +15,
-  // 製造
   '研究開発・R&D': -10, '製造・生産管理': +20, '品質管理・QA': +15,
-  // 小売
   '店舗運営・SV': +25, 'EC・デジタル': +10, 'バイヤー・MD': +5,
-  // 共通
   '経営・管理部門': -15,
 };
 
@@ -1119,34 +1123,28 @@ function getAIRiskLabel(score) {
   return { label: '危険', color: '#c0392b', desc: '高リスク・要対策' };
 }
 
-// タイプ別AI時代の生存戦略メッセージ
 function getAISurvivalMessage(typeCode, score) {
   const isLowRisk = score <= 40;
   const isHighRisk = score >= 65;
 
-  // AH系（熱血・論理）
   if (typeCode.startsWith('AH')) {
     return isLowRisk
       ? `あなたのタイプはAI時代に最も強いタイプの一つです。AIが苦手なこと（組織を動かす政治力・人を巻き込む突破力・不確実な状況での意思決定）は、まさにあなたの強みです。AIを使いこなす側として組織変革のリーダーになれるタイプです。`
       : `あなたのタイプは分析・論理系の業務に強みを持つ一方、そこはAIとの競合領域でもあります。「AIに判断させてビジネスを動かす人間」というポジションへの転換が鍵です。今から：AIツール（ChatGPT・Copilot等）を使いこなす側になること、意思決定・交渉・人間関係構築への特化を意識しましょう。`;
   }
-  // AC系（冷徹・分析）
   if (typeCode.startsWith('AC')) {
     return isHighRisk
       ? `あなたの現在の業務の一部はAIに代替されるリスクがあります。ただし、あなたには強みがあります：組織の細かいニーズを理解する能力、長期的な信頼関係の構築。今から準備すべきこと：AIツールを使いこなすスキルの習得、人間にしかできない調整・判断業務への特化、データを読んで意思決定する側になること。`
       : `分析・データ思考のあなたはAI時代のツールを最も効果的に使いこなせるタイプです。AIを武器として活用し、判断精度と生産性を圧倒的に高めることができます。`;
   }
-  // BH系（感情・人間関係）
   if (typeCode.startsWith('BH')) {
     return `あなたのタイプはAI代替リスクが最も低いカテゴリです。共感・信頼・感情的つながりはAIが最も苦手とする領域。チームマネジメント・顧客関係・組織文化の構築など、あなたの強みが最も輝く仕事はAI時代でも人間が担い続けます。`;
   }
-  // BC系（安定・堅実）
   return isHighRisk
     ? `あなたのタイプはルーティン業務が多く、AIによる自動化の影響を受けやすい傾向があります。今から取るべきアクション：定型業務をAIに委譲して判断・改善業務に集中する、「AIを管理する人間」のポジションを狙う、独自の専門性・資格を追加して代替されにくいポジションを確立する。`
     : `堅実なあなたのタイプは、AIをルーティンに組み込んで効率化する適性が高い。今以上のパフォーマンスをAIを活用して発揮しましょう。`;
 }
 
-// 10年後の収入シナリオ（AI対応度別）
 function calcAIIncomeScenarios(baseLifetime, score) {
   const optimistic = Math.round(baseLifetime * (score <= 40 ? 1.12 : score <= 60 ? 1.08 : 1.05));
   const neutral = Math.round(baseLifetime * (score <= 40 ? 1.02 : score <= 60 ? 0.95 : 0.88));
@@ -1154,13 +1152,11 @@ function calcAIIncomeScenarios(baseLifetime, score) {
   return { optimistic, neutral, pessimistic };
 }
 
-// 33パターンからRECOデータを取得
 function getReco33(job, level) {
   const jobData = RECO33[job] || RECO33.other;
   return jobData[level] || jobData.mid;
 }
 
-// 後方互換用（旧コードが参照している箇所向け）
 const RECO = {
   finance: RECO33.finance.mid,
   it: RECO33.it.mid,
@@ -1177,12 +1173,9 @@ const RECO = {
 };
 
 // ============================================================
-// 会社名サジェスト（国税庁 法人番号公表サイト API）
 // ============================================================
 let suggestItems = [], suggestIdx = -1, suggestTimer = null;
 
-// 国税庁 法人番号APIが利用できない環境向けのフォールバックデータ
-// 実際のデプロイ時はAPIを直接呼び出す（CORSプロキシ推奨）
 const COMPANY_FALLBACK = [
   {name:"トヨタ自動車株式会社",normalized:"toyota_motor",no:"4180301018771",pref:"愛知県"},
   {name:"ソニーグループ株式会社",normalized:"sony_group",no:"5013001004401",pref:"東京都"},
@@ -1208,16 +1201,34 @@ const COMPANY_FALLBACK = [
 
 async function fetchCompanySuggest(q) {
   if (!q || q.length < 2) return [];
-  // 国税庁 法人番号API（本番環境用）
-  // const url = `https://api.houjin-bangou.nta.go.jp/4/name?name=${encodeURIComponent(q)}&type=12&mode=1&target=1&address=0&kind=01&unittype=1`;
-  // 現状はローカルフォールバックで名寄せ処理
   const lower = q.toLowerCase().replace(/\s/g,'');
-  return COMPANY_FALLBACK.filter(c => {
+  // まずローカルフォールバックで即時表示
+  const local = COMPANY_FALLBACK.filter(c => {
     const name = c.name.replace(/\s/g,'').replace(/株式会社|合同会社|有限会社/g,'');
     const nameL = name.toLowerCase();
     const qKana = q.replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
     return c.name.includes(q) || nameL.includes(lower) || c.name.includes(qKana);
   }).slice(0, 6);
+  // GASスプレッドシートから検索（年収データ付き）
+  try {
+    const url = SHEETS_URL + '?action=searchCompany&q=' + encodeURIComponent(q);
+    const res = await fetch(url, {mode:'cors'});
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      return data.results.map(c => ({
+        name: c.name,
+        normalized: c.normalized,
+        avg_income: c.avg_income,
+        paid_leave_rate: c.paid_leave_rate,
+        overtime_hours: c.overtime_hours,
+        turnover_rate: c.turnover_rate,
+        industry: c.industry,
+        size: c.size,
+        pref: '',
+      }));
+    }
+  } catch(e) {}
+  return local;
 }
 
 async function onCompanyInput(val) {
@@ -1257,6 +1268,19 @@ function selectCompany(i) {
   document.getElementById('p-company').value = c.name;
   document.getElementById('p-company-id').value = c.no || '';
   document.getElementById('p-company-normalized').value = c.normalized || c.name;
+  // 年収・労働データをhidden fieldに保存
+  if (c.avg_income) {
+    document.getElementById('p-company-avg-income').value = c.avg_income;
+    document.getElementById('p-company-paid-leave').value = c.paid_leave_rate || '';
+    document.getElementById('p-company-overtime').value = c.overtime_hours || '';
+    document.getElementById('p-company-turnover').value = c.turnover_rate || '';
+    document.getElementById('p-company-industry').value = c.industry || '';
+    // 年収入力欄に会社平均を参考表示
+    const incomeInput = document.getElementById('p-income');
+    if (incomeInput && !incomeInput.value) {
+      incomeInput.placeholder = `例：${c.avg_income}（${c.name}平均）`;
+    }
+  }
   hideSuggest();
 }
 
@@ -1269,41 +1293,168 @@ document.addEventListener('click', e => {
 });
 
 // ============================================================
-// 32タイプ 仕事DNA
 // ============================================================
 const WORK_DNA = {
-  "AHXPR":{name:"熱血革命エリート",sub:"〜組織を内側から壊す者〜",emoji:"⚡",boost:1.18,speedMult:1.3,maxRankScore:6,maxRankName:"役員・取締役",desc:"行動力と論理思考を兼ね備えた変革タイプ。組織の非効率に強い不満を持ちながら内部から変革を起こす。昇進速度は全タイプ中トップクラス。"},
-  "AHXPM":{name:"熱血戦略指揮官",sub:"〜数字で部下を動かす司令塔〜",emoji:"🎯",boost:1.15,speedMult:1.25,maxRankScore:5,maxRankName:"本部長・執行役員",desc:"感情と論理の両方を使いこなす管理職タイプ。"},
-  "AHXSR":{name:"熱血パワー会社員",sub:"〜組織の推進力〜",emoji:"🔥",boost:1.08,speedMult:1.1,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"とにかく突破力がある。管理職までは比較的スムーズだが、慎重さが欠けると判断ミスに繋がる。"},
-  "AHXSM":{name:"熱血まじめ番長",sub:"〜信頼で出世する人〜",emoji:"💪",boost:1.05,speedMult:1.0,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"熱量と誠実さで周囲の信頼を勝ち取る。大企業の出世コースに最も乗りやすいが天井が見えやすい。"},
-  "AHYPR":{name:"反骨革命家",sub:"〜会社を踏み台にする者〜",emoji:"🗡",boost:1.20,speedMult:1.4,maxRankScore:7,maxRankName:"起業・経営者",desc:"組織に縛られることを嫌い、常に次の場所を考えている。起業・独立で本領を発揮する稀少タイプ。"},
-  "AHYPM":{name:"冷徹独立起業家",sub:"〜感情を持たない計算機〜",emoji:"🧊",boost:1.22,speedMult:1.5,maxRankScore:7,maxRankName:"起業・経営者",desc:"最も年収天井が高いタイプ。感情を排除した意思決定と高い行動力の組み合わせは経営者適性の塊。"},
-  "AHYSR":{name:"自由人エリート",sub:"〜ルールより結果〜",emoji:"🦅",boost:1.12,speedMult:1.2,maxRankScore:8,maxRankName:"独立・フリーコンサル",desc:"組織のルールより自分のやり方を優先する。フリーランス・コンサルタントとして高単価を得やすい。"},
-  "AHYSM":{name:"野心家プレイヤー",sub:"〜静かに上を狙う者〜",emoji:"🎲",boost:1.10,speedMult:1.15,maxRankScore:5,maxRankName:"本部長・執行役員",desc:"表面上は従順に見えるが内心では常に上を狙っている。チャンスを見計らって一気に動くタイプ。"},
-  "ACXPR":{name:"革命系冷徹社会人",sub:"〜感情なき改革者〜",emoji:"🤖",boost:1.16,speedMult:1.28,maxRankScore:6,maxRankName:"役員・取締役",desc:"感情を徹底的に排除し、論理と数字だけで動く改革者。コンサル・戦略部門で活きる。"},
-  "ACXPM":{name:"分析型エリート社員",sub:"〜データが全ての世界〜",emoji:"📊",boost:1.13,speedMult:1.18,maxRankScore:5,maxRankName:"本部長・執行役員",desc:"データと論理が行動の全てを支配する。成果は確実に出す。"},
-  "ACXSR":{name:"堅実努力型サラリーマン",sub:"〜コツコツが最強〜",emoji:"📚",boost:1.02,speedMult:0.95,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"日本の大企業が最も重宝するタイプ。生涯賃金の安定性は全タイプ中トップクラス。"},
-  "ACXSM":{name:"職人気質の縁の下番長",sub:"〜縁の下で組織を支える〜",emoji:"🔧",boost:0.99,speedMult:0.85,maxRankScore:3,maxRankName:"課長・マネージャー",desc:"チームや組織を支えることに満足を覚える。専門家としての評価は高い。"},
-  "ACYPR":{name:"孤高の戦略家",sub:"〜一人で勝てる人間〜",emoji:"♟",boost:1.14,speedMult:1.22,maxRankScore:8,maxRankName:"独立・フリーコンサル",desc:"組織に属しながらも常に「自分だけで勝てる力」を磨いている。"},
-  "ACYPM":{name:"クールな独立志向",sub:"〜感情を見せない自由人〜",emoji:"🌙",boost:1.11,speedMult:1.12,maxRankScore:8,maxRankName:"独立・フリーコンサル",desc:"感情を表に出さず淡々と自分の道を歩む。実力は本物。"},
-  "ACYSR":{name:"専門職エリート",sub:"〜スキルが唯一の武器〜",emoji:"🔬",boost:1.09,speedMult:1.05,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",desc:"特定分野の専門性を極めることで高い年収を維持。"},
-  "ACYSM":{name:"地味最強プロフェッショナル",sub:"〜静かに最強〜",emoji:"🗿",boost:1.07,speedMult:0.9,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",desc:"派手さはないが、その分野では誰も敵わない。最終的に最も安定した収入を生む。"},
-  "BHXPR":{name:"明るいカリスマ上司",sub:"〜人がついてくる理由〜",emoji:"☀",boost:1.06,speedMult:1.1,maxRankScore:5,maxRankName:"本部長・執行役員",desc:"人を引きつける天性のカリスマ。営業・マネジメントで圧倒的な成果を上げる。"},
-  "BHXPM":{name:"感情型リーダー",sub:"〜チームの心を動かす人〜",emoji:"❤",boost:1.04,speedMult:1.05,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"メンバーの感情を読み取りチームの雰囲気を最高に保つリーダー。"},
-  "BHXSR":{name:"元気印の組織人",sub:"〜場の空気を作る人〜",emoji:"🎉",boost:0.97,speedMult:0.9,maxRankScore:3,maxRankName:"課長・マネージャー",desc:"どこにいても明るく場の空気を作る。"},
-  "BHXSM":{name:"人情派まじめ社員",sub:"〜信頼が全財産〜",emoji:"🤝",boost:0.96,speedMult:0.88,maxRankScore:3,maxRankName:"課長・マネージャー",desc:"人との繋がりを最も大切にする。"},
-  "BHYPR":{name:"破天荒な革命児",sub:"〜組織に収まらない炎〜",emoji:"🌋",boost:1.15,speedMult:1.35,maxRankScore:7,maxRankName:"起業・経営者",desc:"組織の常識を破ることに快感を覚える。スタートアップ・起業で圧倒的な結果を出す。"},
-  "BHYPM":{name:"感情型起業家",sub:"〜熱量で人を動かす経営者〜",emoji:"🚀",boost:1.17,speedMult:1.45,maxRankScore:7,maxRankName:"起業・経営者",desc:"感情と行動力で人を動かす起業家タイプ。ビジョンを語る力が並外れている。"},
-  "BHYSR":{name:"チャレンジャー型転職マン",sub:"〜常に上を目指す遊牧民〜",emoji:"🏃",boost:1.03,speedMult:1.08,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"現状維持を嫌い、常に新しい環境を求める。"},
-  "BHYSM":{name:"人懐っこい渡り鳥",sub:"〜どこでも馴染める適応者〜",emoji:"🕊",boost:0.98,speedMult:0.92,maxRankScore:3,maxRankName:"課長・マネージャー",desc:"どんな環境でも自然に溶け込める社交性を持つ。"},
-  "BCXPR":{name:"鉄血管理職候補",sub:"〜感情なき昇進マシン〜",emoji:"⚙",boost:1.09,speedMult:1.12,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"感情を排除し組織のルールに最適化された昇進マシン。"},
-  "BCXPM":{name:"慎重派エリート",sub:"〜石橋を叩いて渡る賢者〜",emoji:"🦉",boost:1.07,speedMult:1.0,maxRankScore:4,maxRankName:"部長・シニアマネージャー",desc:"リスクを徹底的に回避し確実な一手だけを選ぶ。安定型。"},
-  "BCXSR":{name:"堅実派サラリーマン",sub:"〜定年まで安全に走る〜",emoji:"🛡",boost:0.98,speedMult:0.88,maxRankScore:3,maxRankName:"課長・マネージャー",desc:"安定を最優先する典型的な日本のサラリーマン。"},
-  "BCXSM":{name:"縁の下のインフラ人材",sub:"〜いないと困る縁の下〜",emoji:"🏗",boost:0.95,speedMult:0.82,maxRankScore:2,maxRankName:"主任・チーフ",desc:"組織が正常に機能するために欠かせない存在。"},
-  "BCYPR":{name:"静かな野心家",sub:"〜笑顔の裏に牙を持つ〜",emoji:"🐺",boost:1.08,speedMult:1.1,maxRankScore:5,maxRankName:"本部長・執行役員",desc:"表面上は従順に見えるが明確なビジョンと野心を内に秘めている。"},
-  "BCYPM":{name:"クール系独立準備中",sub:"〜いずれ独立する準備中〜",emoji:"🎯",boost:1.06,speedMult:1.05,maxRankScore:8,maxRankName:"独立・フリーコンサル",desc:"組織に所属しながら常に「独立の準備」をしている。"},
-  "BCYSR":{name:"職人的フリーエージェント",sub:"〜腕一本で生きる者〜",emoji:"🪚",boost:1.04,speedMult:1.0,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",desc:"特定のスキルを武器に組織に依存しない働き方を実現。"},
-  "BCYSM":{name:"ミニマル安定志向人",sub:"〜必要なだけ稼げればいい〜",emoji:"🌿",boost:0.92,speedMult:0.78,maxRankScore:2,maxRankName:"主任・チーフ",desc:"必要以上の出世や収入増加を求めない。"},
+  "AHXPR":{name:"熱血革命エリート",sub:"〜組織を内側から壊す者〜",emoji:"⚡",boost:1.18,speedMult:1.3,maxRankScore:6,maxRankName:"役員・取締役",
+    desc:"行動力と論理思考を兼ね備えた変革タイプ。組織の非効率に強い不満を持ちながら内部から変革を起こす。昇進速度は全タイプ中トップクラス。",
+    personality:"周囲からは「あの人が動くと組織が変わる」と思われている存在です。会議では最初に核心を突く発言をするため、上司には恐れられ、同期には一目置かれます。あなたの強みは「熱量×論理」という珍しい組み合わせ。感情だけでも論理だけでもなく、両方を武器にできる人は全タイプの中でもトップ3に入る希少性があります。\n職場では「なんでこんな非効率なことをやってるんだ」という苛立ちを常に感じているはずです。それはあなたが正しいからです。ただし、その感情を全面に出しすぎると「扱いにくい人」のレッテルを貼られる危険があります。今より少し戦略的に動くだけで、5年後の景色が大きく変わります。\n相性が良いタイプは「ACXPM（分析型エリート）」。あなたの熱量に数字の裏付けを与えてくれる最強の参謀になります。逆に注意すべきは「BCXSM（縁の下のインフラ人材）」との衝突。スピード感が根本的に違うため、あなたが急かすほど相手は動けなくなります。",
+    compatGood:"📊 ACXPM（分析型エリート）",compatGoodReason:"あなたの熱量と改革案に、冷静な数字の裏付けを与えてくれる。最強の参謀コンビ。",
+    compatRival:"🏗 BCXSM（縁の下のインフラ人材）",compatRivalReason:"スピード感が根本的に違う。急かすほど相手が固まるため、意識的にペースを合わせる努力が必要。"},
+  "AHXPM":{name:"熱血戦略指揮官",sub:"〜数字で部下を動かす司令塔〜",emoji:"🎯",boost:1.15,speedMult:1.25,maxRankScore:5,maxRankName:"本部長・執行役員",
+    desc:"感情と論理の両方を使いこなす管理職タイプ。数字で語りながらも人の心を動かせる稀有な存在。",
+    personality:"部下からは「厳しいけど一番信頼できる上司」と思われています。感情に訴えることもできるし、データで説得することもできる。この両刀使いは管理職として最も評価される資質です。\n会議では自然とファシリテーター役になり、場の結論をまとめてしまいます。これはあなたが意識してやっていることではなく、ほぼ本能的な行動です。周りはそれを頼りにしています。\n気をつけるべきは「完璧主義による抱え込み」。あなたの基準が高すぎるため、部下への仕事の振り方が下手になりやすい傾向があります。相性の良いタイプは「ACXSR（堅実努力型）」。あなたの指示を忠実に実行し、組織をしっかり支えてくれます。",
+    compatGood:"📚 ACXSR（堅実努力型サラリーマン）",compatGoodReason:"あなたの高い基準の指示を忠実に実行する。組織の土台を作る最高のパートナー。",
+    compatRival:"🌋 BHYPR（破天荒な革命児）",compatRivalReason:"ルールへの姿勢が根本的に違う。あなたが作った仕組みを平気で壊してくる。"},
+  "AHXSR":{name:"熱血パワー会社員",sub:"〜組織の推進力〜",emoji:"🔥",boost:1.08,speedMult:1.1,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"とにかく突破力がある。管理職までは比較的スムーズだが、慎重さが欠けると判断ミスに繋がる。",
+    personality:"「あの人に頼めばなんとかなる」と思われているのがあなたです。実行力と行動量で組織の推進力になっています。飲み会では必ず盛り上げ役になり、プロジェクトでは一番動き回っている。そのエネルギーは本物で、周囲に伝染します。\nただし、スピードを重視するあまり「確認不足のミス」が定期的に発生しているはずです。これが昇進の足を引っ張る場合があります。管理職になるためのあと一歩は「丁寧さ」。エネルギーはそのままに、確認する習慣だけ身につければ、あなたの可能性は一気に広がります。\n相性が良いのは「BCXPM（慎重派エリート）」。あなたが見落としがちなリスクを先回りして指摘してくれる、最高のブレーキ役です。",
+    compatGood:"🦉 BCXPM（慎重派エリート）",compatGoodReason:"あなたが見落としがちなリスクを先回りして指摘してくれる最高のブレーキ役。",
+    compatRival:"🗿 ACYSM（地味最強プロフェッショナル）",compatRivalReason:"お互いの仕事スタイルが正反対。あなたのスピード感に相手がついてこれないことが多い。"},
+  "AHXSM":{name:"熱血まじめ番長",sub:"〜信頼で出世する人〜",emoji:"💪",boost:1.05,speedMult:1.0,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"熱量と誠実さで周囲の信頼を勝ち取る。大企業の出世コースに最も乗りやすいが天井が見えやすい。",
+    personality:"職場で「この人には任せられる」と思わせる天才です。上司からの信頼、部下からの慕われ方、同僚との関係性、すべてにおいてバランスが取れている。日本の大企業が最も「管理職にしたい」と思うタイプがあなたです。\n部署にいると場が締まり、あなたがいないと「なんか今日は緩いな」と周りが気づくほどの存在感があります。熱量を持ちながらも誠実さを失わないのがあなたの最大の強み。\n気をつけるべきは「頑張りすぎて燃え尽きること」。あなたは断れない性格のため、仕事が集中しやすい。意識的に「No」と言う練習が必要です。相性が良いのは「BHXPM（感情型リーダー）」。チームの雰囲気をさらに高め合える黄金コンビです。",
+    compatGood:"❤ BHXPM（感情型リーダー）",compatGoodReason:"あなたの誠実さとこのタイプの共感力が合わさると、チームの結束力が格段に上がる。",
+    compatRival:"🧊 AHYPM（冷徹独立起業家）",compatRivalReason:"感情を排除した判断をするこのタイプとは価値観が根本的に合わない。"},
+  "AHYPR":{name:"反骨革命家",sub:"〜会社を踏み台にする者〜",emoji:"🗡",boost:1.20,speedMult:1.4,maxRankScore:7,maxRankName:"起業・経営者",
+    desc:"組織に縛られることを嫌い、常に次の場所を考えている。起業・独立で本領を発揮する稀少タイプ。",
+    personality:"今いる組織に「本当にいるべき場所はここじゃない」という感覚をずっと持っているはずです。それは逃げではありません。あなたのポテンシャルが、今の組織の天井を超えているというシグナルです。\n周囲からは「変わってる」「なんか怖い」と思われることもありますが、それはあなたが見えている景色が違うからです。10年後、あなたが起業して成功したとき、今あなたを「変わってる」と言った人たちはあなたに連絡してくるでしょう。\n最も危険なのは「組織への反骨心を目的にしてしまうこと」。壊すことが目的になると、次に何を作るかが見えなくなります。相性が良いのは「AHYPM（冷徹独立起業家）」。あなたの熱量と相手の冷静さが組み合わさると、最強の共同創業者になれます。",
+    compatGood:"🧊 AHYPM（冷徹独立起業家）",compatGoodReason:"あなたの熱量と革命性に、冷静な計算と実行力を加えてくれる最強の共同創業者候補。",
+    compatRival:"🛡 BCXSR（堅実派サラリーマン）",compatRivalReason:"現状維持を好むこのタイプとは根本的な価値観が合わない。変化への姿勢が正反対。"},
+  "AHYPM":{name:"冷徹独立起業家",sub:"〜感情を持たない計算機〜",emoji:"🧊",boost:1.22,speedMult:1.5,maxRankScore:7,maxRankName:"起業・経営者",
+    desc:"最も年収天井が高いタイプ。感情を排除した意思決定と高い行動力の組み合わせは経営者適性の塊。",
+    personality:"感情でなく数字と論理で動く。これは冷たいのではなく、最も合理的な判断をし続けられるという強みです。周囲からは「近寄りがたい」と思われることもありますが、結果を出し続けることで、いつしか「あの人についていけば間違いない」という評価に変わっていきます。\n会社員として働いている場合、あなたはおそらく「この組織の意思決定の遅さ」に強いフラストレーションを感じているはずです。それは正しい感覚です。あなたが本当に力を発揮できるのは、自分が経営者として意思決定できる環境だからです。\n気をつけるべきは「人間関係を数字で測りすぎること」。優秀な人材は感情を大切にされることで初めて力を発揮します。相性が良いのは「BHYPM（感情型起業家）」。あなたの論理にこのタイプの熱量が加わると、組織全体が動き出します。",
+    compatGood:"🚀 BHYPM（感情型起業家）",compatGoodReason:"あなたの冷静な計算に、人を動かす熱量を加えてくれる。経営パートナーとして最高の組み合わせ。",
+    compatRival:"🤝 BHXSM（人情派まじめ社員）",compatRivalReason:"感情と人間関係を重視するこのタイプとは判断軸が全く違う。"},
+  "AHYSR":{name:"自由人エリート",sub:"〜ルールより結果〜",emoji:"🦅",boost:1.12,speedMult:1.2,maxRankScore:8,maxRankName:"独立・フリーコンサル",
+    desc:"組織のルールより自分のやり方を優先する。フリーランス・コンサルタントとして高単価を得やすい。",
+    personality:"「なんでこんなルールがあるんだ」と思う回数が、他のタイプの3倍はあるはずです。でもそれは、あなたの頭の中にはもっと良いやり方が見えているから。その感覚は正しいし、それを実現できる場所が組織の外に存在します。\n周囲からは「自由な人」と見られていますが、実は誰よりも高い基準を自分に課しています。結果にコミットしているからこそ、プロセスへのこだわりが邪魔に見えるのです。\n相性が良いのは「ACYPR（孤高の戦略家）」。お互いに独立志向が強く、適度な距離感を保ちながら切磋琢磨できる理想的な関係です。気をつけるべきは「BCXPR（鉄血管理職候補）」。ルール遵守を強く求めるこのタイプとは職場で摩擦が生じやすいです。",
+    compatGood:"♟ ACYPR（孤高の戦略家）",compatGoodReason:"お互いに独立志向が強く、適度な距離感を保ちながら高め合える。干渉せず尊重し合える関係。",
+    compatRival:"⚙ BCXPR（鉄血管理職候補）",compatRivalReason:"ルール遵守を強く求めるこのタイプとは、仕事のやり方で衝突しやすい。"},
+  "AHYSM":{name:"野心家プレイヤー",sub:"〜静かに上を狙う者〜",emoji:"🎲",boost:1.10,speedMult:1.15,maxRankScore:5,maxRankName:"本部長・執行役員",
+    desc:"表面上は従順に見えるが内心では常に上を狙っている。チャンスを見計らって一気に動くタイプ。",
+    personality:"職場では「素直で扱いやすい」と思われていますが、実は誰よりも戦略的に動いています。上司の言葉を素直に聞きながら、その裏でチャンスを待っている。この「隠れた野心」こそが、あなたを他のタイプと差別化する強みです。\n周囲が「あの人いつの間に」と気づいたときには、あなたはすでに一段上にいる。この静かな上昇志向は、派手に動くタイプが見落としがちなポジションを着実に確保していきます。\n気をつけるべきは「チャンスを待ちすぎて動けなくなること」。完璧なタイミングは存在しません。80%の準備で動く勇気も時には必要です。相性が良いのは「BHXPR（明るいカリスマ上司）」。あなたの戦略性に表に出る力を加えてくれます。",
+    compatGood:"☀ BHXPR（明るいカリスマ上司）",compatGoodReason:"あなたの戦略性に、人を引きつけるカリスマ性を加えてくれる。表と裏で最強コンビになれる。",
+    compatRival:"🔥 AHXSR（熱血パワー会社員）",compatRivalReason:"先に動きすぎるこのタイプとは、チャンスの取り方で競合しやすい。"},
+  "ACXPR":{name:"革命系冷徹社会人",sub:"〜感情なき改革者〜",emoji:"🤖",boost:1.16,speedMult:1.28,maxRankScore:6,maxRankName:"役員・取締役",
+    desc:"感情を徹底的に排除し、論理と数字だけで動く改革者。コンサル・戦略部門で活きる。",
+    personality:"「なぜ感情論で重要な決定をするのか」という疑問が常にあるはずです。それはあなたが正しいからです。感情に左右されない判断力は、組織において最も希少で価値の高いスキルの一つです。\n周囲からは「怖い」「近寄りがたい」と思われることもありますが、仕事の成果を見ている人は必ずあなたの価値を理解しています。コンサルや戦略部門では「このタイプの人間が欲しかった」と言われることになります。\n気をつけるべきは「感情がないと思われすぎること」。人を動かすにはある程度の感情表現が必要な場面があります。年に数回、意識的に「共感を示す」だけで、周囲の反応が大きく変わります。相性が良いのは「BHXPM（感情型リーダー）」。正反対の強みが補い合う最強コンビです。",
+    compatGood:"❤ BHXPM（感情型リーダー）",compatGoodReason:"あなたの論理と数字に、人の心を動かす感情力を加えてくれる正反対の補完関係。",
+    compatRival:"🎉 BHXSR（元気印の組織人）",compatRivalReason:"感情と雰囲気で動くこのタイプとは、判断の根拠が根本的に違いすぎる。"},
+  "ACXPM":{name:"分析型エリート社員",sub:"〜データが全ての世界〜",emoji:"📊",boost:1.13,speedMult:1.18,maxRankScore:5,maxRankName:"本部長・執行役員",
+    desc:"データと論理が行動の全てを支配する。成果は確実に出すが、意思決定に時間がかかる場合がある。",
+    personality:"「その根拠は？」「データはある？」が口癖になっているはずです。これは弱点ではなく、あなたが最も信頼できる社員である証拠です。感情で動く人が失敗する場面で、あなたは必ず正しい判断をします。\n職場では「分析を頼むならあの人」という存在として定着しています。上司も重要な意思決定の前にあなたの意見を求めてくるはずです。これはあなたの価値が認められているということです。\n気をつけるべきは「分析しすぎて動けなくなること」。全てのデータが揃うまで動かないと、チャンスを逃します。「70%のデータで動く」という練習が、今のあなたに最も必要なことです。相性が良いのは「AHXPR（熱血革命エリート）」。あなたの分析に熱量と実行力を組み合わせると最強です。",
+    compatGood:"⚡ AHXPR（熱血革命エリート）",compatGoodReason:"あなたの緻密な分析に、圧倒的な熱量と実行力を組み合わせてくれる理想のパートナー。",
+    compatRival:"🏃 BHYSR（チャレンジャー型転職マン）",compatRivalReason:"考える前に動くこのタイプとは、意思決定のプロセスで常に衝突する。"},
+  "ACXSR":{name:"堅実努力型サラリーマン",sub:"〜コツコツが最強〜",emoji:"📚",boost:1.02,speedMult:0.95,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"日本の大企業が最も重宝するタイプ。生涯賃金の安定性は全タイプ中トップクラス。",
+    personality:"「地味だけど絶対必要な人」として職場に定着しています。華やかさはないかもしれませんが、あなたがいることで組織の品質が保たれています。締め切りを守る、ミスが少ない、報連相が確実——これらは当たり前に聞こえますが、実は全タイプの中でこれを完璧にできるのはあなただけです。\n長期的に見ると、派手に動いたタイプより確実に生涯賃金が安定していることが統計的に証明されています。亀のように見えても、最終的なゴールには着実に近づいています。\n気をつけるべきは「自分を過小評価すること」。謙虚さは美徳ですが、機会があるときに手を挙げないと、あなたの価値が正当に評価されません。相性が良いのは「AHXPM（熱血戦略指揮官）」。あなたの安定した実行力が最も活きる環境を作ってくれます。",
+    compatGood:"🎯 AHXPM（熱血戦略指揮官）",compatGoodReason:"あなたの堅実な実行力を最大限に活かせる環境と方向性を示してくれる理想の上司タイプ。",
+    compatRival:"🗡 AHYPR（反骨革命家）",compatRivalReason:"変化を起こすことに生きがいを感じるこのタイプとは、働き方の価値観が正反対。"},
+  "ACXSM":{name:"職人気質の縁の下番長",sub:"〜縁の下で組織を支える〜",emoji:"🔧",boost:0.99,speedMult:0.85,maxRankScore:3,maxRankName:"課長・マネージャー",
+    desc:"チームや組織を支えることに満足を覚える。専門家としての評価は高く、なくてはならない存在。",
+    personality:"表には出ないけれど、あなたがいなくなると組織が回らないことに全員が気づく——それがあなたの最大の価値です。プロジェクトの縁の下で、誰も気づかない部分を丁寧に支え続けています。\n周囲からは「いつも助かってる」「あの人が整えてくれたから成功した」という感謝の言葉が、陰では飛び交っています。あなたが思っている以上に、職場での存在感は大きいです。\n気をつけるべきは「感謝されなくても気にしないマインドを持ちすぎること」。正当な評価は求めて良いのです。自分の貢献を定期的に可視化して上司に伝えることで、年収が上がる可能性があります。相性が良いのは「ACXSR（堅実努力型）」。同じ価値観を持つ最高の同志になれます。",
+    compatGood:"📚 ACXSR（堅実努力型サラリーマン）",compatGoodReason:"同じ価値観と仕事スタイルを持つ最高の同志。お互いの強みを自然に補い合える。",
+    compatRival:"⚡ AHXPR（熱血革命エリート）",compatRivalReason:"あなたのペースを一方的に崩してくるこのタイプとは、仕事の進め方で消耗しやすい。"},
+  "ACYPR":{name:"孤高の戦略家",sub:"〜一人で勝てる人間〜",emoji:"♟",boost:1.14,speedMult:1.22,maxRankScore:8,maxRankName:"独立・フリーコンサル",
+    desc:"組織に属しながらも常に「自分だけで勝てる力」を磨いている。独立後に真価を発揮するタイプ。",
+    personality:"チームで動くことは苦手ではないが、本当は一人の方がパフォーマンスが高い——そんな感覚があるはずです。それは協調性がないのではなく、あなたが独立して動けるだけの実力を持っているということです。\n職場では「何を考えているかわからない」と思われることがありますが、あなたの頭の中では常に3手先まで読んでいます。その先読みの精度は、他のタイプが追いつけないレベルです。\n気をつけるべきは「孤独な戦略の穴に入りすぎること」。客観的な視点を保つために、信頼できる一人との対話を定期的に持つことが重要です。相性が良いのは「AHYSR（自由人エリート）」。お互いの独立心を尊重しながら、高め合える理想の関係です。",
+    compatGood:"🦅 AHYSR（自由人エリート）",compatGoodReason:"お互いの独立心と高い基準を尊重し合える。干渉せず刺激を与え合える理想の関係。",
+    compatRival:"🤝 BHXSM（人情派まじめ社員）",compatRivalReason:"人間関係を最優先するこのタイプとは、仕事への向き合い方の根本が違う。"},
+  "ACYPM":{name:"クールな独立志向",sub:"〜感情を見せない自由人〜",emoji:"🌙",boost:1.11,speedMult:1.12,maxRankScore:8,maxRankName:"独立・フリーコンサル",
+    desc:"感情を表に出さず淡々と自分の道を歩む。実力は本物で、独立後の収入天井が高い。",
+    personality:"感情を表に出さないのは弱さではなく、あなたの強みです。感情的にならないことで、周囲が混乱している状況でも冷静に最適解を見つけられます。職場では「あの人に頼むと安心」という信頼が静かに積み上がっています。\n「なんでこんなにテンション低いの？」と言われることがあるかもしれませんが、それはあなたのエネルギーが外に漏れていないだけで、内側では常に精密に動いています。\n気をつけるべきは「誰にも本音を言わないこと」。孤独な作業は効率的ですが、信頼できる人に本音を話すことで、思わぬ突破口が開けることがあります。相性が良いのは「ACYPR（孤高の戦略家）」。同じ独立志向を持ちながら、静かに刺激し合える最高の関係です。",
+    compatGood:"♟ ACYPR（孤高の戦略家）",compatGoodReason:"同じく感情を表に出さない独立志向。静かに尊重し合いながら、高い基準で切磋琢磨できる。",
+    compatRival:"🎉 BHXSR（元気印の組織人）",compatRivalReason:"感情全開で場を盛り上げるこのタイプとは、エネルギーの使い方が正反対で疲弊しやすい。"},
+  "ACYSR":{name:"専門職エリート",sub:"〜スキルが唯一の武器〜",emoji:"🔬",boost:1.09,speedMult:1.05,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",
+    desc:"特定分野の専門性を極めることで高い年収を維持。その分野では誰にも負けない実力を持つ。",
+    personality:"「その分野のことならあの人に聞けばいい」——職場でそう言われているのがあなたです。専門性の高さは、他のタイプが簡単には追いつけない参入障壁になっています。これは時間をかけて磨いてきたあなた自身の努力の結果です。\n職場では「専門家」として一目置かれていますが、それと同時に「管理職にはなれなさそう」という見られ方もあるかもしれません。ただし、これはあなたにとって必ずしも問題ではありません。専門職として極めることで、管理職より高い年収を実現している事例は多数あります。\n気をつけるべきは「専門性の陳腐化」。技術の進化は早いため、常に自分のスキルをアップデートし続けることが収入維持のカギです。相性が良いのは「ACXPR（革命系冷徹社会人）」。あなたの専門性を最大限に活用してくれる改革者です。",
+    compatGood:"🤖 ACXPR（革命系冷徹社会人）",compatGoodReason:"あなたの専門性を組織変革に最大限活用してくれる。スキルの価値を誰より理解している。",
+    compatRival:"🔥 AHXSR（熱血パワー会社員）",compatRivalReason:"深く考えず突破するこのタイプとは、仕事の品質基準で衝突しやすい。"},
+  "ACYSM":{name:"地味最強プロフェッショナル",sub:"〜静かに最強〜",emoji:"🗿",boost:1.07,speedMult:0.9,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",
+    desc:"派手さはないが、その分野では誰も敵わない。最終的に最も安定した収入を生み出すタイプ。",
+    personality:"「静かだけど、あの人がいると安心する」——これがあなたへの周囲の本音です。派手なパフォーマンスはないが、質と精度が常に安定している。これは全タイプの中で最も難しいことを当たり前にやり続けているということです。\n長いキャリアを振り返ったとき、浮き沈みが少なく、着実に積み上がってきた実績があるはずです。これは「地味」ではなく「最強の安定性」です。市場が荒れるほど、あなたのような人材の価値が高まります。\n気をつけるべきは「変化を避けすぎること」。安定は強みですが、世界は変化しています。年に一つだけでも新しいスキルを取り入れることで、安定と成長の両方を手に入れられます。相性が良いのは「ACXSM（職人気質の縁の下番長）」。同じ価値観を持つ最高の同志です。",
+    compatGood:"🔧 ACXSM（職人気質の縁の下番長）",compatGoodReason:"同じく縁の下で組織を支えるスタイル。お互いの仕事への姿勢を深く理解し合える。",
+    compatRival:"⚡ AHXPR（熱血革命エリート）",compatRivalReason:"変革のスピードを強制してくるこのタイプとは、働くペースが合わず消耗しやすい。"},
+  "BHXPR":{name:"明るいカリスマ上司",sub:"〜人がついてくる理由〜",emoji:"☀",boost:1.06,speedMult:1.1,maxRankScore:5,maxRankName:"本部長・執行役員",
+    desc:"人を引きつける天性のカリスマ。営業・マネジメントで圧倒的な成果を上げる稀有なタイプ。",
+    personality:"部署にいると場が明るくなる——それはあなたがいるだけで周囲の生産性が上がるということです。これは「明るい性格」という単純な話ではなく、人の感情を動かす才能があるということです。\n上司からは「あの部下は使いやすい」と思われているかもしれませんが、部下からは「あの人の下で働きたい」と思われています。この人望の差を理解することが、次のステージへの鍵です。\n気をつけるべきは「全員に好かれようとしすぎること」。カリスマは時に嫌われる勇気も必要です。「全員に好かれるリーダー」より「正しい決断をするリーダー」を目指すことで、より高いポジションに到達できます。相性が良いのは「AHYSM（野心家プレイヤー）」。あなたの表の力と相手の裏の戦略が組み合わさると最強です。",
+    compatGood:"🎲 AHYSM（野心家プレイヤー）",compatGoodReason:"あなたの表のカリスマと、このタイプの裏の戦略性が組み合わさると最強のコンビに。",
+    compatRival:"🤖 ACXPR（革命系冷徹社会人）",compatRivalReason:"感情を排除した判断をするこのタイプとは、チームの動かし方で根本的に意見が合わない。"},
+  "BHXPM":{name:"感情型リーダー",sub:"〜チームの心を動かす人〜",emoji:"❤",boost:1.04,speedMult:1.05,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"メンバーの感情を読み取りチームの雰囲気を最高に保つリーダー。離職率が低い部門を作れる。",
+    personality:"「あの上司の下なら頑張れる」と部下に思わせる天才です。チームの誰かが落ち込んでいるとき、最初に気づいて声をかけるのはいつもあなたです。この共感力は、AIが最も苦手とする能力の一つで、これからの時代にさらに価値が上がります。\n職場での評判は上々ですが、上司からの評価が実力に追いついていないと感じることがあるかもしれません。それは感情型リーダーの成果が「数字」より「雰囲気」として現れやすいからです。チームの離職率の低さ、エンゲージメントの高さをデータで示すことで、正当な評価を得やすくなります。\n相性が良いのは「AHXSM（熱血まじめ番長）」。誠実さと共感力が合わさると、最強のチームが生まれます。",
+    compatGood:"💪 AHXSM（熱血まじめ番長）",compatGoodReason:"誠実さと共感力が合わさり、メンバー全員が力を発揮できる最強のチーム環境を作れる。",
+    compatRival:"🤖 ACXPR（革命系冷徹社会人）",compatRivalReason:"感情を排除した判断を優先するこのタイプとは、チームマネジメントの方針で対立しやすい。"},
+  "BHXSR":{name:"元気印の組織人",sub:"〜場の空気を作る人〜",emoji:"🎉",boost:0.97,speedMult:0.9,maxRankScore:3,maxRankName:"課長・マネージャー",
+    desc:"どこにいても明るく場の空気を作る。チームの士気維持に不可欠な存在。",
+    personality:"「あの人がいると職場が明るい」——これはあなたへの最高の評価の一つです。組織にとって、雰囲気を作れる人材の価値は計り知れません。特に業績が落ちているとき、あなたの存在がチームを支えています。\n懸念点があるとすれば、「明るいキャラ」として定着しすぎることで、真剣な意見を言っても軽く受け取られる場合があることです。時には真剣な顔で発言することで、あなたの多面性を職場に見せることが重要です。\n相性が良いのは「BHXSM（人情派まじめ社員）」。同じく人間関係を大切にする価値観で、自然と助け合える関係です。気をつけるべきライバルは「ACYPR（孤高の戦略家）」。お互いのスタイルが理解しにくく、すれ違いやすいです。",
+    compatGood:"🤝 BHXSM（人情派まじめ社員）",compatGoodReason:"同じく人間関係を最優先する価値観。自然と助け合い、職場の雰囲気を一緒に高められる。",
+    compatRival:"♟ ACYPR（孤高の戦略家）",compatRivalReason:"一人で完結するこのタイプとは、コミュニケーションスタイルが根本的に合わない。"},
+  "BHXSM":{name:"人情派まじめ社員",sub:"〜信頼が全財産〜",emoji:"🤝",boost:0.96,speedMult:0.88,maxRankScore:3,maxRankName:"課長・マネージャー",
+    desc:"人との繋がりを最も大切にする。長期的な信頼関係の構築が得意で、職場の潤滑油的存在。",
+    personality:"「あの人には相談しやすい」と言われる存在です。悩んでいる同僚が最初に話しかけるのはあなたです。この聴く力と共感力は、チームのコミュニケーション品質を根本から変える力があります。\n職場では調整役・相談役として不可欠な存在になっています。誰かが困っているとき、自然と動けるのはあなただけです。この人情の厚さが、長期的に見て最も強固なキャリアの基盤になっています。\n気をつけるべきは「人のために消耗しすぎること」。共感力が高すぎるあまり、他人の問題を自分の問題として抱えてしまう傾向があります。「手伝えること」と「手伝えないこと」の境界線を意識的に引くことが、長期的な活躍のために必要です。相性が良いのは「AHXSM（熱血まじめ番長）」。",
+    compatGood:"💪 AHXSM（熱血まじめ番長）",compatGoodReason:"誠実さという共通の軸を持つ。あなたの共感力と相手の行動力が組み合わさると、最強のサポート体制ができる。",
+    compatRival:"🧊 AHYPM（冷徹独立起業家）",compatRivalReason:"人間関係を数字で測るこのタイプとは、仕事への向き合い方の根本が違い、疲弊しやすい。"},
+  "BHYPR":{name:"破天荒な革命児",sub:"〜組織に収まらない炎〜",emoji:"🌋",boost:1.15,speedMult:1.35,maxRankScore:7,maxRankName:"起業・経営者",
+    desc:"組織の常識を破ることに快感を覚える。スタートアップ・起業で圧倒的な結果を出す。",
+    personality:"ルールを守るより、ルールを作る側にいたい——その感覚は正しいです。あなたが本当に力を発揮できるのは、既存の枠組みが存在しない場所、または枠組みを自分で作れる立場です。\n職場では「問題児」と見られることもあるかもしれませんが、それは今いる場所があなたには小さすぎるだけです。スタートアップや起業の世界では、この「枠を壊す力」が最も高く評価されます。\n気をつけるべきは「壊すことだけが目的になること」。革命の後に何を作るかのビジョンがなければ、単なる混乱になります。「何を壊して、何を作るか」を常に持ち続けることが、あなたの力を本物の成果に変えます。相性が良いのは「BHYPM（感情型起業家）」。二人の熱量が合わさると、周囲を巻き込む圧倒的なエネルギーになります。",
+    compatGood:"🚀 BHYPM（感情型起業家）",compatGoodReason:"二人の熱量と革新性が合わさると、周囲を巻き込む圧倒的なエネルギーになる最強コンビ。",
+    compatRival:"🦉 BCXPM（慎重派エリート）",compatRivalReason:"リスクを徹底回避するこのタイプとは、意思決定のスピードと姿勢が正反対で衝突しやすい。"},
+  "BHYPM":{name:"感情型起業家",sub:"〜熱量で人を動かす経営者〜",emoji:"🚀",boost:1.17,speedMult:1.45,maxRankScore:7,maxRankName:"起業・経営者",
+    desc:"感情と行動力で人を動かす起業家タイプ。ビジョンを語る力が並外れており、人を巻き込む天才。",
+    personality:"あなたが話すと、周囲が「なんかやれそうな気がする」と思い始める——これはあなたの最大の武器です。ビジョンを言語化して人を動かす力は、起業家として最も重要な資質の一つです。\n職場での評価は高く、特に新しいプロジェクトや困難な局面でのモチベーション維持において、あなたの存在は不可欠です。「あの人が本気になると、みんなが本気になる」と思われています。\n気をつけるべきは「熱量の持続性」。最初の爆発的なエネルギーが、時間とともに落ちていく場合があります。ルーティンの仕組みを作り、熱量がなくても機能する体制を整えることが、長期的な成功のカギです。相性が良いのは「AHYPM（冷徹独立起業家）」。あなたの感情力と相手の論理力が組み合わさると最強です。",
+    compatGood:"🧊 AHYPM（冷徹独立起業家）",compatGoodReason:"あなたの感情と熱量に、冷静な論理と計算を加えてくれる。経営パートナーとして最強の組み合わせ。",
+    compatRival:"🗿 ACYSM（地味最強プロフェッショナル）",compatRivalReason:"変化より安定を好むこのタイプとは、仕事への向き合い方のテンションが合わない。"},
+  "BHYSR":{name:"チャレンジャー型転職マン",sub:"〜常に上を目指す遊牧民〜",emoji:"🏃",boost:1.03,speedMult:1.08,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"現状維持を嫌い、常に新しい環境を求める。転職によるキャリアアップを繰り返す行動派。",
+    personality:"「もっと良い環境があるはずだ」という感覚が常にあります。それは向上心の表れです。転職を繰り返すことへの後ろめたさは不要です。市場価値を上げながらキャリアを積み上げるこの方法は、日本でも徐々に評価されるようになっています。\n職場では「あの人はまたどこかに行きそう」と思われているかもしれませんが、それはあなたが常に成長していることの証拠でもあります。次のステージへの移動を恐れないことが、あなたの最大の強みです。\n気をつけるべきは「転職が目的化すること」。新しい環境に行くことより、そこで何を達成するかの方が重要です。「何のために動くか」を明確にすることで、転職の成功率が大幅に上がります。相性が良いのは「BHYSM（人懐っこい渡り鳥）」。同じく環境適応力が高く、どこに行っても一緒に活躍できます。",
+    compatGood:"🕊 BHYSM（人懐っこい渡り鳥）",compatGoodReason:"同じく環境適応力が高い。どんな新しい環境でも一緒に自然に溶け込み活躍できる。",
+    compatRival:"📚 ACXSR（堅実努力型サラリーマン）",compatRivalReason:"一つの場所で着実に積み上げるこのタイプとは、キャリアへの根本的な考え方が違う。"},
+  "BHYSM":{name:"人懐っこい渡り鳥",sub:"〜どこでも馴染める適応者〜",emoji:"🕊",boost:0.98,speedMult:0.92,maxRankScore:3,maxRankName:"課長・マネージャー",
+    desc:"どんな環境でも自然に溶け込める社交性を持つ。組織の人間関係をスムーズにする潤滑油。",
+    personality:"新しい職場に行っても1ヶ月で「いないと困る人」になっている——これがあなたのパターンです。環境適応力の高さは、変化の激しい時代において最も価値のある資質の一つです。\n職場では「あの人がいると人間関係が丸くなる」と言われています。対立しやすい人同士の間に自然と入り、場を和ませる能力は、組織の生産性を静かに高めています。\n気をつけるべきは「どこにでも馴染めるあまり、自分のキャリアの方向性が曖昧になること」。適応力は強みですが、「どこに向かうか」の軸も同時に持つことが重要です。相性が良いのは「BHYSR（チャレンジャー型転職マン）」。同じく行動力と適応力を持ち、どこでも一緒に活躍できます。",
+    compatGood:"🏃 BHYSR（チャレンジャー型転職マン）",compatGoodReason:"同じく高い環境適応力を持ち、新しい場所でも自然とチームを作れる行動力のある組み合わせ。",
+    compatRival:"♟ ACYPR（孤高の戦略家）",compatRivalReason:"一人で完結するこのタイプとは、コミュニケーションの取り方で大きくすれ違いやすい。"},
+  "BCXPR":{name:"鉄血管理職候補",sub:"〜感情なき昇進マシン〜",emoji:"⚙",boost:1.09,speedMult:1.12,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"感情を排除し組織のルールに最適化された昇進マシン。大企業の管理職に最も適したタイプ。",
+    personality:"「あの人は出世するためにここにいる」と周囲に思われているかもしれませんが、それは正しい見方です。組織のルールを理解し、それに最適化して動くこの能力は、大企業の管理職として最も評価される資質です。\n感情を排除した判断は時に「冷たい」と見られますが、それはあなたが組織全体のことを考えているからです。個人の感情より組織の成果を優先する姿勢は、管理職として必要不可欠なマインドです。\n気をつけるべきは「部下の感情を軽視すること」。管理職として最も重要なのは「成果を出すこと」ですが、部下の感情を無視すると長期的に組織が崩れます。月に一度、部下と感情的な対話の時間を意識的に作るだけで、チームの成果が大きく変わります。相性が良いのは「BHXPM（感情型リーダー）」。あなたの論理に感情的なサポートを加えてくれます。",
+    compatGood:"❤ BHXPM（感情型リーダー）",compatGoodReason:"あなたの論理的なマネジメントに、感情的なサポートを加えてくれる。部下全員が力を発揮するチームになれる。",
+    compatRival:"🌋 BHYPR（破天荒な革命児）",compatRivalReason:"ルールを壊すことに快感を感じるこのタイプとは、組織への向き合い方が根本的に対立する。"},
+  "BCXPM":{name:"慎重派エリート",sub:"〜石橋を叩いて渡る賢者〜",emoji:"🦉",boost:1.07,speedMult:1.0,maxRankScore:4,maxRankName:"部長・シニアマネージャー",
+    desc:"リスクを徹底的に回避し確実な一手だけを選ぶ。安定した成果を積み上げる信頼の厚いタイプ。",
+    personality:"「あの人が大丈夫と言えば本当に大丈夫」——これがあなたへの最高の信頼の形です。リスクを見抜く目の確かさは、組織において最も重要なスキルの一つです。\n周囲からは「慎重すぎる」と言われることもありますが、あなたのおかげで防げた失敗の数は誰も知りません。その貢献は「失敗がなかった」という形で現れるため、正当に評価されにくい構造があります。これを意識的に可視化することが重要です。\n気をつけるべきは「慎重になりすぎてチャンスを逃すこと」。全てのリスクをゼロにしてから動こうとすると、永遠に動けません。「許容できるリスクの基準」を明確に持つことが、次のステージへの鍵です。相性が良いのは「AHXSR（熱血パワー会社員）」。あなたのブレーキとこのタイプのアクセルが組み合わさると最強です。",
+    compatGood:"🔥 AHXSR（熱血パワー会社員）",compatGoodReason:"あなたのリスク管理能力とこのタイプの突破力が組み合わさると、速くて安全な最強チームになれる。",
+    compatRival:"🌋 BHYPR（破天荒な革命児）",compatRivalReason:"リスクを無視して突進するこのタイプとは、意思決定の場面で激しく対立しやすい。"},
+  "BCXSR":{name:"堅実派サラリーマン",sub:"〜定年まで安全に走る〜",emoji:"🛡",boost:0.98,speedMult:0.88,maxRankScore:3,maxRankName:"課長・マネージャー",
+    desc:"安定を最優先する典型的な日本のサラリーマン。変化には弱いが、組織の安定を支える存在。",
+    personality:"「いつもそこにいてくれる」という安心感がある——それがあなたの最大の価値です。組織の中で変わらず誠実に働き続けることは、思っている以上に希少で、思っている以上に評価されています。\n自分の将来に漠然とした不安を感じることがあるかもしれません。「このまま変わらなくていいのか」という問いです。変化を求めることも良いですが、あなたの「安定を選ぶ力」も立派な強みです。すべての人が変革者である必要はありません。\n気をつけるべきは「変化を恐れすぎること」。世の中は変わり続けています。一つだけでも、小さな新しいことを試す習慣を作ることで、安定を保ちながら成長できます。相性が良いのは「BCXSM（縁の下のインフラ人材）」。同じ価値観を持ち、お互いを自然にサポートし合える関係です。",
+    compatGood:"🏗 BCXSM（縁の下のインフラ人材）",compatGoodReason:"同じく組織の安定を大切にする価値観。お互いの仕事スタイルを深く理解し、自然にサポートし合える。",
+    compatRival:"🗡 AHYPR（反骨革命家）",compatRivalReason:"変化と破壊を好むこのタイプとは、組織への向き合い方が根本的に正反対。"},
+  "BCXSM":{name:"縁の下のインフラ人材",sub:"〜いないと困る縁の下〜",emoji:"🏗",boost:0.95,speedMult:0.82,maxRankScore:2,maxRankName:"主任・チーフ",
+    desc:"組織が正常に機能するために欠かせない存在。地味だが、最も安定した働き方ができるタイプ。",
+    personality:"あなたが休んだ日に初めて、みんながあなたのありがたさに気づく——これがあなたのポジションです。組織のインフラを支えるこの役割は、表には出にくいですが、最も組織から必要とされる存在です。\n「もっと評価されたい」と思うことがあるかもしれません。それは正当な気持ちです。あなたの貢献は「問題が起きなかった」という形で現れるため、意識的に数字で可視化しないと上司に伝わりません。月次の簡単なレポートを作るだけで、評価が変わる可能性があります。\n相性が良いのは「BCXSR（堅実派サラリーマン）」。同じく組織の安定を支える価値観を持ち、お互いを深く理解できる最高の同志です。",
+    compatGood:"🛡 BCXSR（堅実派サラリーマン）",compatGoodReason:"同じく組織の安定を支える価値観。お互いの仕事スタイルを理解し、自然にサポートし合える関係。",
+    compatRival:"⚡ AHXPR（熱血革命エリート）",compatRivalReason:"組織を変革しようとするこのタイプとは、変化のスピードについていけず消耗しやすい。"},
+  "BCYPR":{name:"静かな野心家",sub:"〜笑顔の裏に牙を持つ〜",emoji:"🐺",boost:1.08,speedMult:1.1,maxRankScore:5,maxRankName:"本部長・執行役員",
+    desc:"表面上は従順に見えるが明確なビジョンと野心を内に秘めている。チャンスを待つ戦略家。",
+    personality:"職場では「おとなしい」「真面目」と思われているかもしれません。でも内側では、誰よりも大きな目標を持っています。この「外は穏やか、内は野心」という組み合わせは、長期的なキャリア戦略において最強の武器です。\n周囲が油断している間に、着実にポジションを積み上げていく。このパターンで突然「あの人がこんなにいたのか」と周囲を驚かせる場面が、あなたのキャリアに必ず訪れます。\n気をつけるべきは「チャンスを待ちすぎること」。完璧なタイミングを待っていると、チャンスそのものが消えることがあります。「80%の準備で動く」勇気を持つことが、静かな野心を現実に変えるカギです。相性が良いのは「BHXPR（明るいカリスマ上司）」。あなたの戦略性に表に出る力を加えてくれます。",
+    compatGood:"☀ BHXPR（明るいカリスマ上司）",compatGoodReason:"あなたの内側の戦略性に、表に出るカリスマ性を加えてくれる。裏と表で最強のコンビになれる。",
+    compatRival:"🔥 AHXSR（熱血パワー会社員）",compatRivalReason:"先に動きすぎるこのタイプとは、戦略のタイミングで衝突しやすい。"},
+  "BCYPM":{name:"クール系独立準備中",sub:"〜いずれ独立する準備中〜",emoji:"🎯",boost:1.06,speedMult:1.05,maxRankScore:8,maxRankName:"独立・フリーコンサル",
+    desc:"組織に所属しながら常に独立の準備をしている。今の仕事を踏み台として活用できる賢いタイプ。",
+    personality:"今の仕事をやりながら、心の中では「これが独立に使えるスキルか」と常に考えています。この複眼的な視点は、組織に所属しながら市場価値を高めていく上で最も効率的な戦略です。\n職場では「真面目な社員」として通っていますが、あなたの本当の目的は組織の外にあります。これは不誠実ではありません。組織から学べることを最大限学び、独立に活かすことは、最も賢いキャリア戦略の一つです。\n気をつけるべきは「準備を完璧にしようとして動けなくなること」。独立のタイミングは「準備が整ったとき」ではなく「やると決めたとき」です。相性が良いのは「BCYSR（職人的フリーエージェント）」。同じく独立志向を持ち、お互いの経験から学び合える最高の仲間です。",
+    compatGood:"🪚 BCYSR（職人的フリーエージェント）",compatGoodReason:"同じく独立志向を持つ仲間。お互いの経験とスキルから学び合い、独立後も切磋琢磨できる関係。",
+    compatRival:"🛡 BCXSR（堅実派サラリーマン）",compatRivalReason:"現状維持を最優先するこのタイプとは、キャリアへの根本的な向き合い方が違う。"},
+  "BCYSR":{name:"職人的フリーエージェント",sub:"〜腕一本で生きる者〜",emoji:"🪚",boost:1.04,speedMult:1.0,maxRankScore:4,maxRankName:"専門職・シニアエキスパート",
+    desc:"特定のスキルを武器に組織に依存しない働き方を実現。腕一本で生きる覚悟と実力を持つ。",
+    personality:"「この人がいなくなったらどうしよう」と思わせる専門性を持っているのがあなたです。特定のスキルを極めることで、組織への依存度を下げながら、自分の価値を高め続けています。\n職場では「専門家」として一目置かれていますが、あなた自身は「もっと自由に働きたい」という気持ちが常にあります。その感覚は正しいです。あなたのスキルは、フリーランスや業務委託でも十分に通用するレベルに達している可能性があります。\n気をつけるべきは「スキルの更新を怠ること」。職人気質は素晴らしいですが、世界の変化についていくための学習を怠ると、突然陳腐化するリスクがあります。年に一度は「今のスキルセットで市場価値はあるか」を外のエージェントに確認することをお勧めします。相性が良いのは「BCYPM（クール系独立準備中）」。同じく独立志向を持つ最高の仲間です。",
+    compatGood:"🎯 BCYPM（クール系独立準備中）",compatGoodReason:"同じく独立志向。スキルと戦略、それぞれの強みを組み合わせ、互いの独立後も良い関係が続く。",
+    compatRival:"🎉 BHXSR（元気印の組織人）",compatRivalReason:"組織の雰囲気や人間関係を重視するこのタイプとは、仕事の本質への向き合い方が違う。"},
+  "BCYSM":{name:"ミニマル安定志向人",sub:"〜必要なだけ稼げればいい〜",emoji:"🌿",boost:0.92,speedMult:0.78,maxRankScore:2,maxRankName:"主任・チーフ",
+    desc:"必要以上の出世や収入増加を求めない。自分のペースで確実に仕事をこなす、ブレない人材。",
+    personality:"「なんでみんなそんなに必死なんだろう」と思うことがあるはずです。それはあなたが、収入や地位以外の価値を見えているからです。この「必要なだけ」という感覚は、過剰なストレスを避け、長期的に健康で働き続けるための最高の戦略です。\n職場では「ゆっくりしてる」と見られることもあるかもしれませんが、あなたの仕事の質と安定性は確かです。ミスが少なく、ペースを乱されず、いつも同じクオリティを出せる——これは大企業の長期プロジェクトにおいて最も必要な資質です。\n気をつけるべきは「変化を避けすぎて、時代に取り残されること」。ミニマルな生き方は素晴らしいですが、最低限のスキルアップは継続的に行うことが、あなたの安定を長期的に守ります。相性が良いのは「BCXSR（堅実派サラリーマン）」。同じく安定を大切にする価値観で、自然にわかり合える関係です。",
+    compatGood:"🛡 BCXSR（堅実派サラリーマン）",compatGoodReason:"同じく安定を最優先する価値観。無理せず、お互いのペースを尊重しながら働ける最高の同僚。",
+    compatRival:"⚡ AHXPR（熱血革命エリート）",compatRivalReason:"変革と高い熱量を求めるこのタイプとは、仕事へのエネルギーの使い方が根本的に違う。"},
 };
 
 const QS=[
@@ -1327,9 +1478,7 @@ const QS=[
 ];
 
 // ============================================================
-// 状態管理
 // ============================================================
-// タイプ別背景色マップ（character_prompts準拠・キャラ画像背景色と完全一致）
 const TYPE_BG = {
   'AHXPR':'#FF4500','AHXPM':'#1E3A5F','AHXSR':'#FF6B35','AHXSM':'#2D6A4F',
   'AHYPR':'#8B0000','AHYPM':'#0A0A0A','AHYSR':'#4169E1','AHYSM':'#4A0072',
@@ -1340,9 +1489,6 @@ const TYPE_BG = {
   'BCXPR':'#37474F','BCXPM':'#1B5E20','BCXSR':'#455A64','BCXSM':'#4E342E',
   'BCYPR':'#4A148C','BCYPM':'#263238','BCYSR':'#00695C','BCYSM':'#78909C',
 };
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Mirale v10 コピーデータ
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const SOURCE_NOTE = '※厚労省賃金構造基本統計調査×Miraleデータより算出';
 
@@ -1463,18 +1609,12 @@ const ACTION_COPY = {
   'BC_vague': { week:'社内で自分にしかできない仕事を3つ特定する', month:'その強みを上司・同僚に見える形でアウトプットする', quarter:'社外での小さな実績を1つ作る（勉強会・副業等）' },
 };
 
-const COMPATIBILITY = {
-  AH: { good:'BCYSMタイプ', good_reason:'あなたが突っ走るとき、リスクを静かに管理してくれる唯一のタイプ', rival:'ACXPMタイプ', rival_reason:'データで全てを判断する分析エリート。直感とぶつかるが、最も成長させてくれる相手' },
-  AC: { good:'BHXSMタイプ', good_reason:'感情で組織を動かす力を持つ。あなたの論理に人間味を加えてくれる', rival:'AHXPRタイプ', rival_reason:'直感と熱量で動く革命家。論理より先に動くその姿が最大のストレスになる' },
-  BH: { good:'ACYSMタイプ', good_reason:'静かに支え、確実に動く。あなたの感情型リーダーシップを地に足つけてくれる', rival:'BCXPRタイプ', rival_reason:'感情より数字とルールで動くタイプ。価値観の衝突が最も起きやすい相手' },
-  BC: { good:'AHYSRタイプ', good_reason:'自由に動きながらも結果を出す。あなたの安定志向に適度な刺激を与えてくれる', rival:'BHXPRタイプ', rival_reason:'感情と熱量で人を動かすカリスマ。堅実さより勢いを優先するその姿が苦手になりやすい' },
-};
+// 相性データはWORK_DNA内のcompatGood/compatRivalに統合済み
 
 const SESSION_ID = 'sess_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
 let profile={}, answers={}, curQ=0, resultData={}, chartInst=null, userEmail='', isPurchased=false;
 
 // ============================================================
-// 職種マスタ（業界別動的切替）
 // ============================================================
 const OCCUPATION_MAP = {
   finance: ['法人営業・リテール営業','トレーダー・ディーラー','アナリスト・調査','システム・IT部門','保険・アクチュアリー','経営・管理部門'],
@@ -1519,9 +1659,17 @@ function showLogin(){
     company:$('p-company').value||'',
     companyId:$('p-company-id').value||'',
     companyNorm:$('p-company-normalized').value||'',
+    companyAvgIncome:parseInt($('p-company-avg-income').value)||0,
+    companyPaidLeave:parseFloat($('p-company-paid-leave').value)||0,
+    companyOvertime:parseFloat($('p-company-overtime').value)||0,
+    companyTurnover:parseFloat($('p-company-turnover').value)||0,
+    companyIndustryReal:$('p-company-industry').value||'',
     jobChange:parseInt($('p-jobchange').value)||0,
     empType:$('p-emptype').value||'fulltime',
     priority:$('p-priority').value||'income',
+    overtime:parseInt($('p-overtime').value)||20,
+    paidLeave:parseInt($('p-paidleave').value)||10,
+    satisfaction:parseInt($('p-satisfaction').value)||6,
     occupation:$('p-occupation').value||'',
     moya:$('moya').value||'',
     timing:$('timing').value||'',
@@ -1529,7 +1677,21 @@ function showLogin(){
   show('s-login');setPbar(12);
 }
 function loginGoogle(){alert('Googleログインは Firebase設定後に有効になります。\nメールアドレスで続けます。');skipLogin();}
-function loginEmail(){userEmail=$('l-email').value||'';startQuestions();}
+function checkLoginBtn(){
+  const email=$('l-email').value.trim();
+  const checked=$('consent-tos').checked;
+  const valid=email.includes('@')&&email.includes('.')&&checked;
+  const btn=$('loginBtn');
+  btn.disabled=!valid;
+  btn.style.opacity=valid?'1':'0.4';
+  btn.style.cursor=valid?'pointer':'not-allowed';
+}
+function loginEmail(){
+  const email=$('l-email').value.trim();
+  if(!email||!email.includes('@')){alert('正しいメールアドレスを入力してください');return;}
+  if(!$('consent-tos').checked){alert('利用規約・プライバシーポリシーへの同意が必要です');return;}
+  userEmail=email;startQuestions();
+}
 function skipLogin(){userEmail='';startQuestions();}
 function startQuestions(){curQ=0;answers={};show('s-questions');renderQ();}
 
@@ -1565,7 +1727,6 @@ function startLoading(){
 }
 
 // ============================================================
-// 計算ロジック（実データベース）
 // ============================================================
 function calcType(){
   const s={A:0,B:0,H:0,C:0,X:0,Y:0,P:0,S:0,R:0,M:0};
@@ -1593,33 +1754,26 @@ function calcIncome(typeCode){
   if(upScore===0)maxRankScore=Math.max(maxRankScore-1,currentRank);
   const maxRankName=RANK_NAMES[Math.min(maxRankScore,8)];
 
-  // 昇給停止年齢（厚労省・人事院データ準拠）★先に計算
   const baseStopAge=profile.size==='large'?43:profile.size==='mid'?46:50;
   const stopAge=Math.min(Math.round(baseStopAge+(speedFinal-1)*4),60);
   const yearsToStopRaw = Math.max(1, stopAge - age);
 
-  // ★ 現在年収・役職から逆算してピーク年収を算出
   const curRankMult=RANK_MULT[Math.min(currentRank,8)];
   const maxRankMult=RANK_MULT[Math.min(maxRankScore,8)];
   const peakIncomeRaw=Math.round(currentIncome*(maxRankMult/curRankMult)*td.boost+eduAdd);
-  // 実際の昇給額が入力されている場合は実績ベースの推定と統計推定をブレンド
   const raiseInput = profile.annualRaise || 0;
   const peakByRaise = raiseInput > 0 ? Math.round(currentIncome + raiseInput * yearsToStopRaw) : peakIncomeRaw;
   const peakBlended = raiseInput > 0
     ? Math.round(peakIncomeRaw * 0.5 + peakByRaise * 0.5)
     : peakIncomeRaw;
-  // 必ず現在年収以上になるよう保護
   const peakIncome=Math.max(peakBlended, currentIncome);
 
-  // 役職定年後（人事院データ：平均28%減）
   const afterCut=Math.round(peakIncome*0.72);
 
-  // 生涯賃金（個人年収ベースで積算）
   const yearsToStop=Math.max(1,stopAge-age);
   const totalGrowth=peakIncome-currentIncome;
   let lifetime=0;
   const chartY=[],chartM=[],chartA=[];
-  // 厚労省データがあれば年齢別実データを使用、なければJOB_DATAのbaseで代替
   const mhlwAvg = getSalaryAvgByAge(profile.job, age);
   const avgIncome = mhlwAvg ? mhlwAvg : Math.round(jd.base*sizeMult);
   const useMhlw = !!mhlwAvg;
@@ -1638,7 +1792,6 @@ function calcIncome(typeCode){
     lifetime+=mine;
     chartY.push(a+'歳');
     chartM.push(mine);
-    // 厚労省データがあれば年齢別実データ、なければ従来ロジック
     const mhlwA = useMhlw ? getSalaryAvgByAge(profile.job, a) : null;
     chartA.push(mhlwA
       ? (a >= 55 ? Math.round(mhlwA * 0.72) : mhlwA)
@@ -1652,7 +1805,6 @@ function calcIncome(typeCode){
 }
 
 // ============================================================
-// ティーザー表示（壁の前・無料）
 // ============================================================
 function computeAndShowTeaser(){
   const typeCode=calcType();
@@ -1662,9 +1814,7 @@ function computeAndShowTeaser(){
   saveData(inc,typeCode);
 
   $('teaserType').setAttribute('data-emoji',td.emoji);
-  // タイプ別背景色をティーザー画面にも適用（キャラ画像と一致）
   $('teaserType').style.background = TYPE_BG[typeCode] || '#0e0c0a';
-  // キャラクター画像セット
   const teaserImg = $('teaserCharImg');
   if(teaserImg && CHAR_IMAGES[typeCode]){
     teaserImg.src = CHAR_IMAGES[typeCode];
@@ -1693,7 +1843,6 @@ function computeAndShowTeaser(){
 function showTeaser(){show('s-teaser');window.scrollTo({top:0});}
 
 function purchase(){
-  // 購入後プレビューURL（決済完了後はこのURLにリダイレクト）
   const {typeCode, inc} = resultData;
   const previewUrl = `premium.html?t=${typeCode}&age=${profile.age}&rank=${profile.rank||0}&job=${profile.job}&inc=${profile.income}&peak=${inc.peakIncome}&stop=${inc.stopAge}&life=${Math.round(inc.lifetime/10000)*10000}&cut=${inc.afterCut}&occ=${encodeURIComponent(profile.occupation||'')}&intent=${calcJobChangeIntent()}`;
   $('premiumPreviewLink').href = previewUrl;
@@ -1707,7 +1856,6 @@ function closeModal(){
 function submitWaitlist(){
   const email=$('waitlistEmail').value.trim();
   if(!email||!email.includes('@')){alert('メールアドレスを正しく入力してください');return;}
-  // スプレッドシートに待機リストとして保存
   if(SHEETS_URL){
     fetch(SHEETS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({
       timestamp:new Date().toISOString(),
@@ -1733,10 +1881,8 @@ function renderFullResult(){
   const job={finance:"金融・保険",it:"IT・通信",consult:"コンサル",med:"医療・製薬",mfg:"製造業",trade:"商社",retail:"小売・サービス",public:"公務員・教育",const:"建設・不動産",media:"メディア",other:"その他"}[profile.job]||'あなたの業界';
 
   $('rMasthead').setAttribute('data-code',td.name);
-  // タイプ別背景色を適用（キャラ画像と一致）
   const bgColor = TYPE_BG[typeCode] || '#0e0c0a';
   $('rMasthead').style.background = bgColor;
-  // キャラクター画像セット
   const rImg = $('resultCharImg');
   if(rImg && CHAR_IMAGES[typeCode]){
     rImg.src = CHAR_IMAGES[typeCode];
@@ -1744,10 +1890,12 @@ function renderFullResult(){
     rImg.style.display = 'block';
     rImg.style.margin = '0 auto';
   }
-  $('rTypeCode').textContent='仕事DNA TYPE：'+typeCode;
+  $('rTypeCode').textContent='仕事DNA TYPE：'+typeCode+'（'+td.name+'）';
   $('rTypeName').textContent=td.emoji+' '+td.name;
   $('rTypeSub').textContent=td.sub;
-  $('rTypeDesc').textContent=td.desc;
+  const personalityHtml=(td.personality||td.desc||'').split('\n').filter(Boolean).map(p=>`<p style="margin-bottom:14px;line-height:1.9;font-size:13px;">${p}</p>`).join('');
+  $('rTypeDesc').innerHTML=personalityHtml;
+  if(td.compatGood){$('compatGood').textContent=td.compatGood;$('compatGoodReason').textContent=td.compatGoodReason;$('compatRival').textContent=td.compatRival;$('compatRivalReason').textContent=td.compatRivalReason;}
   $('rMaxRank').textContent=inc.maxRankName;
 
   const diff=profile.income-inc.avgIncome;
@@ -1761,7 +1909,6 @@ function renderFullResult(){
   $('rAfterCut').textContent=inc.afterCut.toLocaleString();
   $('rLifetime').textContent=(inc.lifetime/10000).toFixed(1)+'億';
   $('rVsAvg').textContent=inc.diffStr;
-  // 厚労省データ使用時は「同業界平均」ラベルを更新
   const vsAvgLabel = document.querySelector('#rVsAvg + .data-lbl') || document.querySelector('[id="rVsAvg"]')?.closest('.data-cell')?.querySelector('.data-lbl');
   if (vsAvgLabel) vsAvgLabel.textContent = inc.useMhlw ? '同業界平均との比較（厚労省実データ）' : '同業界平均との比較';
 
@@ -1769,7 +1916,6 @@ function renderFullResult(){
   const ctx=$('myChart').getContext('2d');
   chartInst=new Chart(ctx,{type:'line',data:{labels:inc.chartY,datasets:[{label:td.emoji+' '+td.name,data:inc.chartM,borderColor:'#c0392b',backgroundColor:'rgba(192,57,43,0.08)',borderWidth:2,pointRadius:0,tension:0.4,fill:true},{label:'同業界平均',data:inc.chartA,borderColor:'#cfc4b0',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3,borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a6f62',font:{size:11},boxWidth:20}}},scales:{x:{ticks:{color:'#7a6f62',font:{size:10},maxTicksLimit:8},grid:{color:'rgba(207,196,176,0.3)'}},y:{ticks:{color:'#7a6f62',font:{size:10},callback:v=>v+'万'},grid:{color:'rgba(207,196,176,0.3)'}}}}});
 
-  // タイムライン
   const age=profile.age;
   const tl=[];
   const isEntrepreneur=td.maxRankScore>=7;
@@ -1798,15 +1944,12 @@ function renderFullResult(){
   $('rRecoLevel').textContent = levelLabel;
   $('rReco').innerHTML=recs.map((r,i)=>'<div class="rec-item"><div class="rec-rank-box r'+(i+1)+'">'+(i===0?'1st':i===1?'2nd':'3rd')+'</div><div class="rec-body"><div class="rec-industry">'+r.i+'</div><div class="rec-detail">'+r.d+'</div><div class="rec-bump">'+r.b+'</div></div></div>').join('');
 
-  // シナリオ比較レンダリング
   const scenarios = calcScenarios(typeCode, inc);
   renderScenarios(scenarios);
   switchScenario(0);
 
-  // 会社データ表示（EDINET / 非上場DB）
   renderCompanyInsight(profile.companyNorm, profile.company);
 
-  // AIリスクスコア描画
   const aiScore = calcAIRiskScore(typeCode);
   const aiLabel = getAIRiskLabel(aiScore);
   const industryAvg = AI_INDUSTRY_AVG[profile.job] || 52;
@@ -1855,7 +1998,6 @@ function renderFullResult(){
     <div style="font-size:10px;color:var(--muted);text-align:right;">※AIリスクスコアはタイプ・業種・職種・役職を組み合わせた独自算出値です</div>
   `;
 
-  // ━━━ v10追加ロジック ━━━
   const group     = TYPE_GROUP[typeCode] || 'AH';
   const ageGroup  = getAgeGroup(profile.age);
   const moya      = profile.moya    || 'future';
@@ -1868,10 +2010,20 @@ function renderFullResult(){
   const whyCopy    = WHY_COPY[group];
   const futureCopy = FUTURE_COPY[`${group}_${timingKey}`] || FUTURE_COPY[`${group}_vague`];
   const actionCopy = ACTION_COPY[actionKey] || ACTION_COPY[`${group}_vague`];
-  const compat     = COMPATIBILITY[group];
-
   if (coreMSG)    { document.getElementById('coreMessage').textContent  = coreMSG; }
-  if (stateCopy)  { document.getElementById('stateCopy').textContent    = stateCopy; }
+  if (stateCopy)  {
+    // 満足度・残業に応じてstateCopyに一言追加
+    let stateExtra = '';
+    const sat = profile.satisfaction || 6;
+    const ot  = profile.overtime || 20;
+    const lv  = profile.paidLeave || 10;
+    if (sat <= 2) stateExtra += '\n\n⚠️ 満足度が非常に低い状態です。このまま続けることで、3年以内にバーンアウトするリスクが統計的に高い傾向があります。';
+    else if (sat <= 4) stateExtra += '\n\n📊 現在の満足度は低めです。転職を検討するなら、まず市場価値の確認から始めることをおすすめします。';
+    if (ot >= 40) stateExtra += '\n\n🚨 月40時間以上の残業は、健康リスクと生産性低下の両面で長期的な年収にマイナスの影響を与えるデータがあります。';
+    else if (ot >= 30 && profile.priority === 'stable') stateExtra += '\n\n💡 WLBを重視するあなたにとって、現在の残業時間は理想より多い状態です。';
+    if (lv <= 5 && profile.priority === 'stable') stateExtra += '\n\n💡 有給消化が少ない状態です。法定の有給取得義務（年5日）をフルに使えているか確認してみてください。';
+    document.getElementById('stateCopy').textContent = stateCopy + stateExtra;
+  }
   if (whyCopy)    { document.getElementById('whyCopy').textContent      = whyCopy; }
   if (futureCopy) { document.getElementById('futureCopy').textContent   = futureCopy; }
   document.getElementById('sourceNote').textContent   = SOURCE_NOTE;
@@ -1880,14 +2032,8 @@ function renderFullResult(){
     document.getElementById('actionMonth').textContent   = actionCopy.month;
     document.getElementById('actionQuarter').textContent = actionCopy.quarter;
   }
-  if (compat) {
-    document.getElementById('compatGood').textContent        = compat.good;
-    document.getElementById('compatGoodReason').textContent  = compat.good_reason;
-    document.getElementById('compatRival').textContent       = compat.rival;
-    document.getElementById('compatRivalReason').textContent = compat.rival_reason;
-  }
 
-  // 新セクションを表示
+
   ['sec-state','sec-future','sec-action','sec-compat'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'block';
@@ -1897,8 +2043,6 @@ function renderFullResult(){
 }
 
 // ============================================================
-// EDINET 上場企業データ
-// 出典: 金融庁 EDINET 有価証券報告書（2023年度提出分）
 // 実際の本番実装では EDINET API: https://disclosure2.edinet-fsa.go.jp/api/v2/
 // ============================================================
 const CHAR_IMAGES = {
@@ -1937,37 +2081,29 @@ const CHAR_IMAGES = {
 };
 
 const EDINET_DB = {
-  // 広告・メディア
   "hakuhodo":         {name:"株式会社博報堂",ticker:"2433",avgIncome:961,employees:3800,listed:true,source:"有価証券報告書2023"},
   "dentsu":           {name:"株式会社電通グループ",ticker:"4324",avgIncome:1170,employees:72000,listed:true,source:"有価証券報告書2023"},
   "cyberagent":       {name:"株式会社サイバーエージェント",ticker:"4751",avgIncome:678,employees:6500,listed:true,source:"有価証券報告書2023"},
-  // IT・通信
   "ntt_data":         {name:"NTTデータグループ株式会社",ticker:"9613",avgIncome:837,employees:14000,listed:true,source:"有価証券報告書2023"},
   "sony_group":       {name:"ソニーグループ株式会社",ticker:"6758",avgIncome:1019,employees:109700,listed:true,source:"有価証券報告書2023"},
   "fujitsu":          {name:"富士通株式会社",ticker:"6702",avgIncome:868,employees:124000,listed:true,source:"有価証券報告書2023"},
   "nec":              {name:"日本電気株式会社",ticker:"6701",avgIncome:824,employees:110000,listed:true,source:"有価証券報告書2023"},
   "recruit_hd":       {name:"株式会社リクルートホールディングス",ticker:"6098",avgIncome:954,employees:8900,listed:true,source:"有価証券報告書2023"},
   "mercari":          {name:"株式会社メルカリ",ticker:"4385",avgIncome:742,employees:1800,listed:true,source:"有価証券報告書2023"},
-  // 製造業
   "toyota_motor":     {name:"トヨタ自動車株式会社",ticker:"7203",avgIncome:859,employees:72700,listed:true,source:"有価証券報告書2023"},
   "hitachi":          {name:"株式会社日立製作所",ticker:"6501",avgIncome:934,employees:28000,listed:true,source:"有価証券報告書2023"},
-  // 金融
   "mufg":             {name:"三菱UFJフィナンシャル・グループ",ticker:"8306",avgIncome:772,employees:40000,listed:true,source:"有価証券報告書2023"},
   "nomura_hd":        {name:"野村ホールディングス株式会社",ticker:"8604",avgIncome:1021,employees:26000,listed:true,source:"有価証券報告書2023"},
-  // コンサル（非上場多い）
   "accenture":        {name:"アクセンチュア株式会社",ticker:null,avgIncome:890,employees:16000,listed:false,source:"doda年収統計2024/OpenWork"},
   "mckinsey":         {name:"マッキンゼー・アンド・カンパニー",ticker:null,avgIncome:1420,employees:800,listed:false,source:"doda年収統計2024/業界推計"},
-  // 商社
   "itochu":           {name:"伊藤忠商事株式会社",ticker:"8001",avgIncome:1254,employees:4200,listed:true,source:"有価証券報告書2023"},
   "mitsui_bussan":    {name:"三井物産株式会社",ticker:"8031",avgIncome:1408,employees:5400,listed:true,source:"有価証券報告書2023"},
   "sumitomo_corp":    {name:"住友商事株式会社",ticker:"8053",avgIncome:1249,employees:5800,listed:true,source:"有価証券報告書2023"},
-  // Amazon / Google
   "amazon_japan":     {name:"アマゾンジャパン合同会社",ticker:null,avgIncome:860,employees:9000,listed:false,source:"doda年収統計2024/Glassdoor"},
   "google_japan":     {name:"グーグル合同会社",ticker:null,avgIncome:1180,employees:2000,listed:false,source:"doda年収統計2024/Glassdoor"},
 };
 
 // ============================================================
-// 会社データDB（非上場・中小企業 ユーザー投稿蓄積）
 // ============================================================
 const COMPANY_DB_KEY = 'mirai_company_db';
 
@@ -1987,7 +2123,6 @@ function saveCompanyToDB(companyNorm, companyName, income, job, size, rank) {
   });
   db[companyNorm].lastSeen = new Date().toISOString();
   db[companyNorm].count = db[companyNorm].records.length;
-  // 平均年収を更新
   const incomes = db[companyNorm].records.map(r => r.income).filter(Boolean);
   if (incomes.length > 0) db[companyNorm].avgIncome = Math.round(incomes.reduce((a,b)=>a+b,0)/incomes.length);
   try { localStorage.setItem(COMPANY_DB_KEY, JSON.stringify(db)); } catch(e) {}
@@ -1995,9 +2130,7 @@ function saveCompanyToDB(companyNorm, companyName, income, job, size, rank) {
 }
 
 function lookupCompanyIncome(companyNorm) {
-  // 1. EDINETデータ（上場企業・権威あるデータ）
   if (companyNorm && EDINET_DB[companyNorm]) return { ...EDINET_DB[companyNorm], dataType: 'edinet' };
-  // 2. ユーザー投稿蓄積データ（非上場・中小企業）
   const db = loadCompanyDB();
   if (companyNorm && db[companyNorm] && db[companyNorm].count >= 1) {
     return { ...db[companyNorm], dataType: 'user_contributed', listed: false };
@@ -2006,10 +2139,7 @@ function lookupCompanyIncome(companyNorm) {
 }
 
 // ============================================================
-// 3シナリオ計算エンジン
 // ============================================================
-// 出典: doda「転職白書」2024 / リクルートワークス「転職実態調査」2024
-// 転職による年収変化の統計データ（業界×タイプ別）
 const TRANSFER_GAIN = {
   finance: { it:0.18, consult:0.28, trade:0.12 },
   it:      { consult:0.32, finance:0.15, med:0.18 },
@@ -2033,7 +2163,6 @@ function calcScenarios(typeCode, inc) {
   const baseStop = inc.stopAge;
   const job = profile.job || 'other';
 
-  // ─── シナリオ0：現状維持 ───
   const sc0 = {
     label: '現状維持', delta: 0,
     peak: basePeak, stopAge: baseStop,
@@ -2049,20 +2178,17 @@ function calcScenarios(typeCode, inc) {
     source: '厚労省「賃金構造基本統計調査」2024年 / 人事院「民間企業給与実態調査」2024年'
   };
 
-  // ─── シナリオ1：戦略転職 ───
   const gainRates = TRANSFER_GAIN[job] || TRANSFER_GAIN.other;
   const bestJobKey = Object.entries(gainRates).sort((a,b)=>b[1]-a[1])[0][0];
   const bestGain = gainRates[bestJobKey];
   const transferIncome = Math.round(profile.income * (1 + bestGain));
   const jdTarget = JOB_DATA[bestJobKey] || JOB_DATA.other;
-  // 転職後の生涯賃金（転職後の新ベースで再計算）
   const transferPeak = Math.round(transferIncome * (inc.peakIncome / profile.income) * 1.05);
   const transferStopAge = Math.min(baseStop + 2, 58); // 転職で昇給停止が少し延びる
   const yearsRemaining = Math.max(1, 65 - age);
   const transferLifetime = Math.round(
     (transferIncome * 3 + transferPeak * (yearsRemaining - 6) * 0.7 + transferPeak * 0.72 * Math.max(0, 65 - 55)) / 1
   );
-  // 実際は簡易計算で +bestGain * baseLifetime
   const transferLifetimeFinal = Math.round(baseLifetime * (1 + bestGain * 0.75));
   const deltaLifetime1 = transferLifetimeFinal - baseLifetime;
   const bestJobName = BEST_TRANSFER[job] || 'IT・通信';
@@ -2082,7 +2208,6 @@ function calcScenarios(typeCode, inc) {
     source: 'doda「転職白書」2024年版 / リクルートワークス「転職実態調査」2024年'
   };
 
-  // ─── シナリオ2：独立・副業 ───
   const isEntrepreneur = td.maxRankScore >= 7;
   const isFreeAgent = td.maxRankScore >= 6 && (typeCode.includes('Y'));
   let indepLifetime, indepPeak, indepTitle, indepBody, indepBadge, indepBadgeText;
@@ -2139,13 +2264,11 @@ function calcScenarios(typeCode, inc) {
 
 function renderScenarios(scenarios) {
   scenarios.forEach((sc, i) => {
-    // タブのデルタ更新
     const deltaEl = document.getElementById('scDelta'+i);
     if (deltaEl) {
       if (sc.delta === 0) { deltaEl.textContent = '基準'; deltaEl.className = 'sc-tab-delta neu'; }
       else { const v = (sc.delta/10000).toFixed(1); deltaEl.textContent = (sc.delta>0?'+':'')+v+'億'; deltaEl.className = 'sc-tab-delta '+(sc.delta>0?'pos':'neg'); }
     }
-    // パネルのHTML
     const panel = document.getElementById('scPanel'+i);
     if (!panel) return;
     const nums = [
@@ -2173,42 +2296,75 @@ function switchScenario(idx) {
 }
 
 // ============================================================
-// EDINET / 会社データ表示（resultに追加）
 // ============================================================
 function renderCompanyInsight(companyNorm, companyName) {
-  const data = lookupCompanyIncome(companyNorm);
   const container = document.getElementById('rCompanyInsight');
   if (!container) return;
-  if (!data) {
-    // 非上場・未蓄積 → 蓄積中であることを表示
-    if (companyName) {
-      container.innerHTML = `
-        <div class="company-badge unlisted">非上場 / データ収集中</div>
-        <div class="db-notice">「${companyName}」のデータをDBに蓄積しました。同社の診断者が増えるほど精度が向上します。現在は業界×規模の統計値を使用しています。</div>`;
-    }
-    return;
+
+  // スプレッドシートから取得した会社データ（選択時に保存済み）
+  const spAvgIncome = profile.companyAvgIncome || 0;
+  const spPaidLeave = profile.companyPaidLeave || 0;
+  const spOvertime  = profile.companyOvertime  || 0;
+  const spTurnover  = profile.companyTurnover  || 0;
+
+  // 業界平均（比較用）
+  const IND_AVG = {
+    finance:{income:820,leave:72,overtime:26}, it:{income:780,leave:79,overtime:21},
+    consult:{income:950,leave:68,overtime:33}, med:{income:870,leave:76,overtime:22},
+    mfg:{income:760,leave:72,overtime:23},    trade:{income:1200,leave:70,overtime:27},
+    retail:{income:520,leave:65,overtime:27}, public:{income:660,leave:58,overtime:30},
+    const:{income:880,leave:70,overtime:28},  media:{income:820,leave:70,overtime:30},
+    other:{income:620,leave:68,overtime:25},
+  };
+  const ind = IND_AVG[profile.job] || IND_AVG.other;
+
+  if (spAvgIncome > 0) {
+    // スプレッドシートデータあり
+    const incDiff = spAvgIncome - ind.income;
+    const leaveDiff = spPaidLeave - ind.leave;
+    const otDiff = spOvertime - ind.overtime;
+    const sign = v => v >= 0 ? `+${v}` : `${v}`;
+    const cls = v => v >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+    const clsRev = v => v <= 0 ? 'color:var(--green)' : 'color:var(--red)'; // 残業は低い方が良い
+
+    container.innerHTML = `
+      <div class="company-badge listed">✅ データあり</div>
+      <div class="edinet-income">
+        <strong style="font-size:14px;">${companyName}</strong>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;">
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:700;">${spAvgIncome}万</div>
+            <div style="font-size:10px;color:var(--muted);">平均年収</div>
+            <div style="font-size:11px;${cls(incDiff)}">${sign(incDiff)}万（業界比）</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:700;">${spPaidLeave}%</div>
+            <div style="font-size:10px;color:var(--muted);">有給消化率</div>
+            <div style="font-size:11px;${cls(leaveDiff)}">${sign(Math.round(leaveDiff))}pt（業界比）</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:700;">${spOvertime}h</div>
+            <div style="font-size:10px;color:var(--muted);">月平均残業</div>
+            <div style="font-size:11px;${clsRev(otDiff)}">${sign(Math.round(otDiff))}h（業界比）</div>
+          </div>
+        </div>
+        ${profile.priority === 'balance' && spPaidLeave < 60 ? '<div style="margin-top:8px;font-size:11px;color:var(--red);">⚠️ あなたがWLBを重視するなら、この会社の有給消化率は業界平均を下回っています。</div>' : ''}
+        ${profile.priority === 'balance' && spOvertime > 30 ? '<div style="margin-top:4px;font-size:11px;color:var(--red);">⚠️ 月残業${spOvertime}hは業界平均より多めです。転職先選びの参考にしてください。</div>' : ''}
+        <div style="font-size:9px;color:var(--muted);margin-top:6px;">出典：Miraleデータベース（厚労省・各社IR・有報より集計）</div>
+      </div>`;
+  } else if (companyName) {
+    container.innerHTML = `
+      <div class="company-badge unlisted">データ収集中</div>
+      <div class="edinet-income">「${companyName}」のデータを蓄積中です。同社の診断者が増えるほど精度が向上します。現在は業界×規模の統計値を使用しています。</div>`;
   }
-  const src = data.dataType === 'edinet' ? `金融庁EDINET ${data.source}` : `ユーザー投稿データ（n=${data.count}件）`;
-  const badge = data.listed ? '上場企業 / EDINETデータ使用' : data.dataType === 'user_contributed' ? `非上場 / ${data.count}名の投稿データ` : '非上場 / 業界推計データ';
-  const badgeCls = data.listed ? 'listed' : 'unlisted';
-  container.innerHTML = `
-    <div class="company-badge ${badgeCls}">${badge}</div>
-    <div class="edinet-income">
-      <strong>${data.name}</strong> の平均年収：<strong style="font-size:16px;">${data.avgIncome.toLocaleString()}万円</strong>
-      ${data.ticker ? `（東証：${data.ticker}）` : ''}
-      ${data.employees ? ` ｜ 従業員数 ${data.employees.toLocaleString()}名` : ''}
-      <br><span style="font-size:9px;color:var(--muted);">出典：${src}</span>
-    </div>`;
 }
 
 // ============================================================
-// データ保存（会社DB蓄積 + セッションログ）
 // ============================================================
 async function saveData(inc, typeCode) {
   const companyNorm = profile.companyNorm || '';
   const companyName = profile.company || '';
 
-  // 非上場・未登録企業のデータをローカルDBに蓄積
   if (companyName && !EDINET_DB[companyNorm]) {
     saveCompanyToDB(companyNorm || companyName.replace(/[\s株式会社合同会社]/g,'').toLowerCase(),
       companyName, profile.income, profile.job, profile.size, profile.rank);
@@ -2233,12 +2389,14 @@ async function saveData(inc, typeCode) {
     lifetime: inc.lifetime,
     stop_age: inc.stopAge,
     max_rank: inc.maxRankName,
-    // B2B向けセグメント情報
     job_change_intent: calcJobChangeIntent(),
     job_change_count: profile.jobChange||0,
     emp_type: profile.empType||'',
     priority: profile.priority||'',
     occupation: profile.occupation||'',
+    overtime: profile.overtime||0,
+    paid_leave: profile.paidLeave||0,
+    satisfaction: profile.satisfaction||0,
     moya: profile.moya||'',
     timing: profile.timing||'',
     segment_tag: `${profile.job}_${profile.size}_${profile.age}代`,
@@ -2255,14 +2413,10 @@ async function saveData(inc, typeCode) {
   }
 }
 
-// 転職意向スコア（B2B広告配信に使用）
 function calcJobChangeIntent() {
   let score = 0;
-  // Q7,Q8,Q9（組織との関係）でYを選んだ数
   [6,7,8].forEach(qi => { if (answers[qi] !== undefined && (QS[qi].a[answers[qi]].t === 'Y')) score += 2; });
-  // 現職との不満指標
   if (profile.income < (JOB_DATA[profile.job]?.base || 459) * 0.85) score += 3;
-  // 年齢×役職ミスマッチ
   if (profile.age >= 35 && (profile.rank || 0) <= 1) score += 2;
   return Math.min(score, 10); // 0〜10スコア
 }
