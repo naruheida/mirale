@@ -346,6 +346,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
       <option value="public">公務員・教育・非営利</option>
       <option value="const">建設・不動産</option>
       <option value="media">メディア・広告・エンタメ</option>
+      <option value="admin">事務・管理職（総務・人事・経理等）</option>
       <option value="other">その他</option>
     </select>
   </div>
@@ -776,39 +777,52 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 </section>
 </main>
 
-<!-- COMING SOON MODAL -->
-<div id="comingSoonModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--ink);color:var(--paper);max-width:480px;width:100%;padding:40px 32px;position:relative;border:1px solid #333;">
-    <button onclick="closeModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer;line-height:1;">✕</button>
-    <div style="font-size:10px;letter-spacing:0.3em;color:var(--gold2);font-weight:700;margin-bottom:16px;">COMING SOON</div>
-    <div style="font-family:'Noto Serif JP',serif;font-size:22px;font-weight:900;line-height:1.4;margin-bottom:8px;">有料レポート、<br>まもなく公開。</div>
-    <div style="font-size:12px;color:#888;line-height:1.8;margin-bottom:24px;">Stripe決済機能を現在実装中です。公開時にいち早くお知らせするため、メールアドレスを登録してください。<br><strong style="color:var(--gold2);">ローンチ記念価格：¥980（通常価格 ¥3,000）</strong></div>
-    <div style="background:#111;border:1px solid #2a2a2a;padding:20px;margin-bottom:24px;">
-      <div style="font-size:11px;color:var(--gold2);font-weight:700;letter-spacing:0.1em;margin-bottom:12px;">📋 有料レポートに含まれる内容</div>
-      <div style="font-size:12px;color:#aaa;line-height:2;">
-        ✅ 生涯年収シミュレーション（65歳まで全グラフ）<br>
-        ✅ AI代替リスクを踏まえた年収防衛戦略<br>
-        ✅ 役員到達の条件分析（同タイプ比較）<br>
-        ✅ 転職・昇進・副業 あなた専用プラン<br>
-        ✅ 同タイプのキャリア変化事例5件<br>
-        ✅ パーソナライズ求人レコメンド3選
-      </div>
+<!-- NICKNAME MODAL -->
+<div id="nicknameModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--ink);color:var(--paper);max-width:440px;width:100%;padding:36px 28px;position:relative;border:1px solid #2a2a2a;">
+    <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold2);font-weight:700;margin-bottom:20px;">PREMIUM REPORT — ¥980</div>
+    <div style="font-family:'Noto Serif JP',serif;font-size:20px;font-weight:900;line-height:1.5;margin-bottom:8px;">あなただけのレポートを<br>今すぐ生成します</div>
+    <div style="font-size:12px;color:#888;line-height:1.8;margin-bottom:28px;">Claude AIがあなたの診断データを分析し、約15,000字のパーソナライズレポートを生成します。生成には30〜60秒かかります。</div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:8px;">レポート内での呼び名（任意）</div>
+      <input id="nicknameInput" type="text" placeholder="例：たっちゃん、田中さん、なりくん" maxlength="20"
+        style="width:100%;padding:14px;background:#111;border:1px solid #333;color:var(--paper);font-size:15px;box-sizing:border-box;font-family:'Noto Sans JP',sans-serif;outline:none;">
+      <div style="font-size:10px;color:#555;margin-top:6px;">空欄の場合は「あなた」として生成します</div>
     </div>
-    <div id="waitlistForm">
-      <input id="waitlistEmail" type="email" placeholder="メールアドレスを入力" style="width:100%;padding:14px;background:#111;border:1px solid #333;color:var(--paper);font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-      <button onclick="submitWaitlist()" style="width:100%;padding:16px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.05em;">公開時に通知を受け取る（無料）→</button>
-      <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;">スパムは送りません。配信解除はいつでも可能。</div>
-    </div>
-    <div id="waitlistDone" style="display:none;text-align:center;padding:20px 0;">
-      <div style="font-size:32px;margin-bottom:12px;">✅</div>
-      <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;margin-bottom:8px;">登録完了しました</div>
-      <div style="font-size:12px;color:#888;line-height:1.8;">公開時にメールでお知らせします。<br>初回割引クーポンも一緒にお送りします。</div>
-    </div>
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #222;text-align:center;">
-      <a id="premiumPreviewLink" href="premium.html" target="_blank" style="font-size:11px;color:#555;text-decoration:none;">▶ 有料レポートのサンプルを見る（Coming Soon版）</a>
-    </div>
+    <button onclick="startReportGeneration()" style="width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:10px;">レポートを生成する →</button>
+    <button onclick="closeNicknameModal()" style="width:100%;padding:10px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
+    <div style="margin-top:16px;font-size:10px;color:#444;text-align:center;line-height:1.8;">※ Stripe決済は近日実装予定。現在はテストとして無料でご利用いただけます。</div>
   </div>
 </div>
+
+<!-- REPORT GENERATING OVERLAY -->
+<div id="reportGenerating" style="display:none;position:fixed;inset:0;background:var(--ink);z-index:9998;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:0.1em;margin-bottom:4px;">MIRALE</div>
+  <div style="font-size:11px;color:#555;letter-spacing:0.2em;margin-bottom:48px;">PREMIUM REPORT</div>
+  <div style="width:44px;height:44px;border:2px solid #222;border-top-color:var(--gold);border-radius:50%;animation:rgspin 0.8s linear infinite;margin:0 auto 28px;"></div>
+  <div id="genStatus" style="font-family:'Noto Serif JP',serif;font-size:16px;color:var(--paper);margin-bottom:10px;line-height:1.6;">AIがあなたの仕事DNAを分析中…</div>
+  <div style="font-size:12px;color:#555;line-height:1.8;margin-bottom:40px;">診断データ × 統計データ × AIが組み合わさった<br>15,000字のレポートを生成しています</div>
+  <div style="width:100%;max-width:300px;">
+    <div style="height:2px;background:#1a1a1a;border-radius:1px;overflow:hidden;">
+      <div id="genProgressBar" style="height:100%;background:var(--gold);width:0%;transition:width 0.6s ease;border-radius:1px;"></div>
+    </div>
+    <div id="genProgressText" style="font-size:11px;color:#444;margin-top:8px;">0%</div>
+  </div>
+  <ul id="genSteps" style="list-style:none;margin-top:32px;text-align:left;width:100%;max-width:300px;font-size:12px;color:#444;line-height:2.4;">
+    <li id="gs1">○ 仕事DNAタイプを解析</li>
+    <li id="gs2">○ キャリアタイムラインを構築</li>
+    <li id="gs3">○ 転職・独立シナリオを試算</li>
+    <li id="gs4">○ AIリスクスコアを計算</li>
+    <li id="gs5">○ パーソナライズ文章を生成中</li>
+    <li id="gs6">○ レポートを最終化</li>
+  </ul>
+</div>
+<style>@keyframes rgspin{to{transform:rotate(360deg)}}</style>
+
+<!-- PREMIUM REPORT SCREEN -->
+<section class="screen" id="s-premium-report">
+  <div id="premiumReportContent" style="padding-bottom:60px;"></div>
+</section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
@@ -858,6 +872,7 @@ const JOB_DATA = {
   public:  { base:481, ceil:720,  avgGrowthRate:1.018, source:'人事院民間給与実態調査2024' },
   const:   { base:498, ceil:880,  avgGrowthRate:1.021, source:'厚労省賃金構造統計2024/建設業' },
   media:   { base:452, ceil:780,  avgGrowthRate:1.017, source:'厚労省賃金構造統計2024/情報サービス' },
+  admin:   { base:418, ceil:720,  avgGrowthRate:1.015, source:'厚労省賃金構造統計2024/管理・事務職' },
   other:   { base:459, ceil:750,  avgGrowthRate:1.018, source:'国税庁民間給与実態統計調査2023' },
 };
 
@@ -1058,6 +1073,23 @@ const RECO33 = {
       {i:"資格・スキルアップ投資",d:"市場価値の高いスキルを習得して転職カードを増やす。",b:"将来の年収UP投資"},
     ],
   },
+  admin: {
+    high:[
+      {i:"HRTech・人事コンサル",d:"人事・採用経験はHRTech企業やコンサルで高く評価される。DX化が急速な今が転職のチャンス。",b:"+20〜50%年収UP"},
+      {i:"CFO・財務マネージャー",d:"経理・財務経験者は事業会社のCFO候補として需要が急増。上場準備企業は特に高単価。",b:"+25〜60%年収UP"},
+      {i:"法務・コンプライアンス専門職",d:"上場企業・外資への転職で法務の市場価値は今が最高値。資格があれば年収2倍も現実的。",b:"+20〜50%年収UP"},
+    ],
+    mid:[
+      {i:"大手企業の管理部門（他社）",d:"管理経験を活かして規模の大きな企業へ横展開。給与体系が整った大企業で安定性UP。",b:"+10〜25%年収UP"},
+      {i:"スタートアップの管理部長",d:"少数精鋭のスタートアップで管理全般を担うポジション。裁量大きく成長できる。",b:"+10〜30%年収UP"},
+      {i:"公認会計士・社労士資格取得",d:"実務経験に資格を掛け合わせることで市場価値が大幅UP。独立の選択肢も開ける。",b:"資格取得で年収+50〜150万"},
+    ],
+    low:[
+      {i:"社内での専門性深化",d:"総務・人事・経理のどれか1つを専門家レベルまで極める。社内での不可欠な存在になれる。",b:"社内評価UP+安定"},
+      {i:"資格取得（簿記・社労士・宅建）",d:"実務に直結する資格で社内外の市場価値を高める。簿記2級から始めるのが最短ルート。",b:"年収+20〜80万の可能性"},
+      {i:"副業（バックオフィス代行）",d:"総務・経理の知識を中小企業向けに提供。クラウドワークスで月3〜15万の案件多数。",b:"月+3〜15万"},
+    ],
+  },
 };
 
 function calcJobChangeLevel() {
@@ -1071,11 +1103,11 @@ function calcJobChangeLevel() {
 // ============================================================
 const AI_BASE_SCORE = {
   finance: 70, it: 40, consult: 35, med: 25, mfg: 55,
-  trade: 40, retail: 75, public: 30, const: 45, media: 60, other: 55,
+  trade: 40, retail: 75, public: 30, const: 45, media: 60, admin: 80, other: 55,
 };
 const AI_INDUSTRY_AVG = {
   finance: 65, it: 38, consult: 32, med: 22, mfg: 52,
-  trade: 38, retail: 72, public: 28, const: 42, media: 58, other: 52,
+  trade: 38, retail: 72, public: 28, const: 42, media: 58, admin: 76, other: 52,
 };
 function getTypeAdjustment(typeCode) {
   let adj = 0;
@@ -1104,6 +1136,8 @@ const OCCUPATION_AI_RISK = {
   '研究開発・R&D': -10, '製造・生産管理': +20, '品質管理・QA': +15,
   '店舗運営・SV': +25, 'EC・デジタル': +10, 'バイヤー・MD': +5,
   '経営・管理部門': -15,
+  '総務': +35, '人事・採用': +20, '経理・財務': +40, '法務・コンプライアンス': +15,
+  '広報・IR': +10, '情報システム': -5, '秘書・一般事務': +45, '事務・バックオフィス': +40,
 };
 
 function calcAIRiskScore(typeCode) {
@@ -1176,59 +1210,66 @@ const RECO = {
 // ============================================================
 let suggestItems = [], suggestIdx = -1, suggestTimer = null;
 
-const COMPANY_FALLBACK = [
-  {name:"トヨタ自動車株式会社",normalized:"toyota_motor",no:"4180301018771",pref:"愛知県"},
-  {name:"ソニーグループ株式会社",normalized:"sony_group",no:"5013001004401",pref:"東京都"},
-  {name:"株式会社日立製作所",normalized:"hitachi",no:"0000000000000",pref:"東京都"},
-  {name:"NTTデータグループ株式会社",normalized:"ntt_data",no:"5013001004424",pref:"東京都"},
-  {name:"株式会社リクルートホールディングス",normalized:"recruit_hd",no:"5013001004425",pref:"東京都"},
-  {name:"楽天グループ株式会社",normalized:"rakuten",no:"5013001004426",pref:"東京都"},
-  {name:"株式会社メルカリ",normalized:"mercari",no:"1013001074268",pref:"東京都"},
-  {name:"株式会社サイバーエージェント",normalized:"cyberagent",no:"2013001006891",pref:"東京都"},
-  {name:"野村ホールディングス株式会社",normalized:"nomura_hd",no:"1010001052558",pref:"東京都"},
-  {name:"株式会社三菱UFJフィナンシャル・グループ",normalized:"mufg",no:"1010001052561",pref:"東京都"},
-  {name:"マッキンゼー・アンド・カンパニー",normalized:"mckinsey",no:"",pref:"東京都"},
-  {name:"アクセンチュア株式会社",normalized:"accenture",no:"",pref:"東京都"},
-  {name:"アマゾンジャパン合同会社",normalized:"amazon_japan",no:"",pref:"東京都"},
-  {name:"グーグル合同会社",normalized:"google_japan",no:"",pref:"東京都"},
-  {name:"日本電気株式会社",normalized:"nec",no:"",pref:"東京都"},
-  {name:"富士通株式会社",normalized:"fujitsu",no:"",pref:"東京都"},
-  {name:"株式会社電通グループ",normalized:"dentsu_group",no:"",pref:"東京都"},
-  {name:"伊藤忠商事株式会社",normalized:"itochu",no:"",pref:"東京都"},
-  {name:"三井物産株式会社",normalized:"mitsui_bussan",no:"",pref:"東京都"},
-  {name:"住友商事株式会社",normalized:"sumitomo_corp",no:"",pref:"東京都"},
-];
+// 会社データ（companies.jsonから非同期ロード）
+let COMPANY_DATA = [];
+let companyDataLoaded = false;
+
+fetch('companies.json')
+  .then(r => r.json())
+  .then(data => {
+    COMPANY_DATA = data;
+    companyDataLoaded = true;
+  })
+  .catch(() => { companyDataLoaded = false; });
+
+function normalizeQuery(q) {
+  return q
+    .replace(/株式会社|有限会社|合同会社|（株）|\(株\)|㈱|ホールディングス/g, '')
+    .replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60))
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/\s/g, '')
+    .toLowerCase();
+}
 
 async function fetchCompanySuggest(q) {
-  if (!q || q.length < 2) return [];
-  const lower = q.toLowerCase().replace(/\s/g,'');
-  // まずローカルフォールバックで即時表示
-  const local = COMPANY_FALLBACK.filter(c => {
-    const name = c.name.replace(/\s/g,'').replace(/株式会社|合同会社|有限会社/g,'');
-    const nameL = name.toLowerCase();
-    const qKana = q.replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
-    return c.name.includes(q) || nameL.includes(lower) || c.name.includes(qKana);
-  }).slice(0, 6);
-  // GASスプレッドシートから検索（年収データ付き）
+  if (!q || q.length < 1) return [];
+  const nq = normalizeQuery(q);
+  const ql = q.toLowerCase().replace(/\s/g, '');
+
+  if (companyDataLoaded && COMPANY_DATA.length > 0) {
+    const results = COMPANY_DATA.filter(c => {
+      return c.n.includes(q) ||
+             c.r.includes(q) ||
+             normalizeQuery(c.n).includes(nq) ||
+             (c.y && c.y.includes(nq)) ||
+             (c.e && c.e.includes(ql));
+    }).slice(0, 8);
+
+    if (results.length > 0) {
+      return results.map(c => ({
+        name: c.n, normalized: c.r,
+        avg_income: c.i, paid_leave_rate: c.l,
+        overtime_hours: c.o, turnover_rate: c.t,
+        industry: c.j, size: c.s, pref: '',
+      }));
+    }
+  }
+
+  // ローカルにない場合はGASにフォールバック
   try {
     const url = SHEETS_URL + '?action=searchCompany&q=' + encodeURIComponent(q);
-    const res = await fetch(url, {mode:'cors'});
+    const res = await fetch(url, { method: 'GET', mode: 'cors', redirect: 'follow' });
     const data = await res.json();
     if (data.results && data.results.length > 0) {
       return data.results.map(c => ({
-        name: c.name,
-        normalized: c.normalized,
-        avg_income: c.avg_income,
-        paid_leave_rate: c.paid_leave_rate,
-        overtime_hours: c.overtime_hours,
-        turnover_rate: c.turnover_rate,
-        industry: c.industry,
-        size: c.size,
-        pref: '',
+        name: c.name, normalized: c.normalized,
+        avg_income: c.avg_income, paid_leave_rate: c.paid_leave_rate,
+        overtime_hours: c.overtime_hours, turnover_rate: c.turnover_rate,
+        industry: c.industry, size: c.size, pref: '',
       }));
     }
   } catch(e) {}
-  return local;
+  return [];
 }
 
 async function onCompanyInput(val) {
@@ -1617,16 +1658,17 @@ let profile={}, answers={}, curQ=0, resultData={}, chartInst=null, userEmail='',
 // ============================================================
 // ============================================================
 const OCCUPATION_MAP = {
-  finance: ['法人営業・リテール営業','トレーダー・ディーラー','アナリスト・調査','システム・IT部門','保険・アクチュアリー','経営・管理部門'],
-  it:      ['エンジニア・開発','プロダクトマネージャー','営業・セールス','マーケティング','データ・アナリスト','インフラ・セキュリティ','経営・管理部門'],
-  consult: ['戦略コンサルタント','ITコンサルタント','人事・組織コンサル','財務・M&Aアドバイザー','調査・リサーチ','経営・管理部門'],
-  med:     ['MR・医療営業','医師・薬剤師・技師','臨床開発・CRO','医療機器営業','ヘルスケアIT','経営・管理部門'],
-  mfg:     ['研究開発・R&D','製造・生産管理','品質管理・QA','調達・購買','営業・海外営業','経営・管理部門'],
-  trade:   ['営業・トレーダー','事業開発・投資','海外事業・IR','物流・サプライチェーン','経営・管理部門'],
-  retail:  ['店舗運営・SV','バイヤー・MD','EC・デジタル','マーケティング','物流・SCM','経営・管理部門'],
-  public:  ['行政・政策立案','教員・講師','福祉・支援職','調査・研究','NPO・社会起業','経営・管理部門'],
-  const:   ['施工管理・現場監督','設計・建築士','不動産営業・仲介','PM・デベロッパー','設備・電気','経営・管理部門'],
-  media:   ['営業・アカウント','デジタル広告運用・アナリスト','クリエイティブ・デザイン','プランニング・ストラテジー','編集・コンテンツ制作','エンジニア・テクノロジー','経営・管理部門'],
+  finance: ['法人営業・リテール営業','トレーダー・ディーラー','アナリスト・調査','システム・IT部門','保険・アクチュアリー','事務・バックオフィス','経営・管理部門'],
+  it:      ['エンジニア・開発','プロダクトマネージャー','営業・セールス','マーケティング','データ・アナリスト','インフラ・セキュリティ','事務・バックオフィス','経営・管理部門'],
+  consult: ['戦略コンサルタント','ITコンサルタント','人事・組織コンサル','財務・M&Aアドバイザー','調査・リサーチ','事務・バックオフィス','経営・管理部門'],
+  med:     ['MR・医療営業','医師・薬剤師・技師','臨床開発・CRO','医療機器営業','ヘルスケアIT','事務・バックオフィス','経営・管理部門'],
+  mfg:     ['研究開発・R&D','製造・生産管理','品質管理・QA','調達・購買','営業・海外営業','事務・バックオフィス','経営・管理部門'],
+  trade:   ['営業・トレーダー','事業開発・投資','海外事業・IR','物流・サプライチェーン','事務・バックオフィス','経営・管理部門'],
+  retail:  ['店舗運営・SV','バイヤー・MD','EC・デジタル','マーケティング','物流・SCM','事務・バックオフィス','経営・管理部門'],
+  public:  ['行政・政策立案','教員・講師','福祉・支援職','調査・研究','NPO・社会起業','事務・バックオフィス','経営・管理部門'],
+  const:   ['施工管理・現場監督','設計・建築士','不動産営業・仲介','PM・デベロッパー','設備・電気','事務・バックオフィス','経営・管理部門'],
+  media:   ['営業・アカウント','デジタル広告運用・アナリスト','クリエイティブ・デザイン','プランニング・ストラテジー','編集・コンテンツ制作','エンジニア・テクノロジー','事務・バックオフィス','経営・管理部門'],
+  admin:   ['総務','人事・採用','経理・財務','法務・コンプライアンス','広報・IR','情報システム','秘書・一般事務','経営・管理部門'],
   other:   ['営業','企画・マーケティング','エンジニア・IT','事務・バックオフィス','専門職・技術職','経営・管理部門'],
 };
 function updateOccupation(){
@@ -1843,31 +1885,235 @@ function computeAndShowTeaser(){
 function showTeaser(){show('s-teaser');window.scrollTo({top:0});}
 
 function purchase(){
-  const {typeCode, inc} = resultData;
-  const previewUrl = `premium.html?t=${typeCode}&age=${profile.age}&rank=${profile.rank||0}&job=${profile.job}&inc=${profile.income}&peak=${inc.peakIncome}&stop=${inc.stopAge}&life=${Math.round(inc.lifetime/10000)*10000}&cut=${inc.afterCut}&occ=${encodeURIComponent(profile.occupation||'')}&intent=${calcJobChangeIntent()}`;
-  $('premiumPreviewLink').href = previewUrl;
-  $('comingSoonModal').style.display='flex';
+  $('nicknameModal').style.display='flex';
   document.body.style.overflow='hidden';
 }
-function closeModal(){
-  $('comingSoonModal').style.display='none';
+function closeNicknameModal(){
+  $('nicknameModal').style.display='none';
   document.body.style.overflow='';
 }
-function submitWaitlist(){
-  const email=$('waitlistEmail').value.trim();
-  if(!email||!email.includes('@')){alert('メールアドレスを正しく入力してください');return;}
-  if(SHEETS_URL){
-    fetch(SHEETS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({
-      timestamp:new Date().toISOString(),
-      type:'waitlist',
-      email,
-      type_code:resultData.typeCode||'',
-      income:profile.income||0,
-      job:profile.job||'',
-    })}).catch(()=>{});
+function closeModal(){ closeNicknameModal(); }
+
+// ============================================================
+// レポート生成メイン
+// ============================================================
+async function startReportGeneration(){
+  const nickname = $('nicknameInput').value.trim() || 'あなた';
+  closeNicknameModal();
+
+  // キャッシュチェック（同一メール2回目は即表示）
+  const cacheKey = 'mirale_report_' + (userEmail || 'guest') + '_' + (resultData.typeCode||'');
+  const cached = sessionStorage.getItem(cacheKey);
+  if(cached){
+    renderPremiumReport(JSON.parse(cached), nickname);
+    return;
   }
-  $('waitlistForm').style.display='none';
-  $('waitlistDone').style.display='block';
+
+  // 生成画面表示
+  const genDiv = $('reportGenerating');
+  genDiv.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // プログレスアニメーション
+  const steps = ['gs1','gs2','gs3','gs4','gs5','gs6'];
+  const statusMessages = [
+    'AIがあなたの仕事DNAを分析中…',
+    'キャリアタイムラインを構築中…',
+    '転職・独立シナリオを試算中…',
+    'AIリスクスコアを計算中…',
+    'パーソナライズ文章を生成中…',
+    'レポートを最終化中…',
+  ];
+  let stepIdx = 0;
+  const stepInterval = setInterval(()=>{
+    if(stepIdx > 0) $('gs'+(stepIdx)).textContent = '✓ ' + $('gs'+stepIdx).textContent.replace('○ ','').replace('▶ ','');
+    if(stepIdx < steps.length){
+      $('gs'+(stepIdx+1)).textContent = '▶ ' + $('gs'+(stepIdx+1)).textContent.replace('○ ','');
+      $('genStatus').textContent = statusMessages[stepIdx];
+      const pct = Math.round((stepIdx+1)/steps.length * 85);
+      $('genProgressBar').style.width = pct + '%';
+      $('genProgressText').textContent = pct + '%';
+    }
+    stepIdx++;
+    if(stepIdx >= steps.length) clearInterval(stepInterval);
+  }, 6000);
+
+  try {
+    const {typeCode, td, inc} = resultData;
+    const rankNames = ['一般社員','主任・リーダー','係長・チーフ','課長・マネージャー','部長・シニアマネージャー','本部長・執行役員','役員・取締役','起業家・経営者'];
+    const jobNames = {finance:'金融・保険',it:'IT・ソフトウェア',consult:'コンサル・シンクタンク',med:'医療・製薬',mfg:'製造業・メーカー',trade:'商社・卸売',retail:'小売・流通',public:'公務員・教育',const:'建設・不動産',media:'メディア・広告',admin:'事務・管理職',other:'その他'};
+    const aiScore = calcAIRiskScore(typeCode);
+    const intent = calcJobChangeIntent();
+    const intentLv = intent>=6?'高':intent>=3?'中':'低';
+    const recoJob = RECO33[profile.job] || RECO33['other'];
+    const recoLv = calcJobChangeLevel();
+    const recos = recoJob[recoLv] || [];
+
+    const systemPrompt = `あなたはMiraleというキャリア診断サービスのプレミアムレポートライターです。
+統計データに基づいた具体的な数字と、占い師のような温かく語りかける文体を組み合わせた文章を書きます。
+必ずユーザーの名前（ニックネーム）を自然に使いながら語りかけてください。
+各セクションは指定の文字数を守り、改行を適切に入れて読みやすくしてください。
+JSONのみで返答してください。マークダウンや\`\`\`は不要です。`;
+
+    const userPrompt = `以下のユーザーデータに基づいてMiraleプレミアムレポートを日本語で生成してください。
+
+【ユーザー情報】
+ニックネーム: ${nickname}
+タイプコード: ${typeCode}
+タイプ名: ${td.name}（${td.sub}）
+年齢: ${profile.age}歳
+現在の役職: ${rankNames[profile.rank||0]}
+業界: ${jobNames[profile.job]||profile.job}
+職種: ${profile.occupation||'未回答'}
+会社規模: ${profile.size}
+現在年収: ${profile.income}万円
+推定ピーク年収: ${inc.peakIncome}万円
+昇給停止推定年齢: ${inc.stopAge}歳
+役職定年後年収: ${inc.afterCut}万円
+推定生涯賃金: ${Math.round(inc.lifetime/10000)}億円
+転職回数: ${profile.jobChange}回
+雇用形態: ${profile.empType}
+仕事で重視すること: ${profile.priority}
+転職意向レベル: ${intentLv}
+AI代替リスクスコア: ${aiScore}/100
+最高到達推定役職: ${inc.maxRankName}
+転職推奨1位: ${recos[0]?recos[0].i:''}（${recos[0]?recos[0].b:''}）
+転職推奨2位: ${recos[1]?recos[1].i:''}
+転職推奨3位: ${recos[2]?recos[2].i:''}
+
+以下の12セクションをJSONで生成してください。各セクションのkeyはs01〜s12です。
+s01: 仕事DNA「光と影」800字。タイプの本質・強みと弱みを語りかける文体で。
+s02: キャリアタイムライン3000字。現在から65歳まで5年刻みで年齢別に詳細に書く。各年代で何が起きるかを具体的に。
+s03: 今の会社に残る場合1200字。3つのシナリオ（楽観・標準・悲観）と具体的な年収数字を含めて。
+s04: 転職シナリオ1200字。転職先3パターンの年収シミュレーションと転職タイミングの具体的アドバイス。
+s05: 独立・副業シナリオ1000字。今すぐできる副業から独立までの段階的ロードマップ。
+s06: 転職推奨ランキング詳細3000字。5社の具体的な企業名・転職後年収・面接対策を詳しく。
+s07: AIリスク＋ファーストステップ1000字。スコア${aiScore}/100の意味と今月やること。
+s08: 周りからの評価・陥りやすい罠1000字。職場での評判と繰り返しやすい失敗パターン。
+s09: ビジネス力と職場への影響800字。あなたが組織に与えている見えない価値を数値で。
+s10: ビジネスが上手くいく方法800字。このタイプ専用の成功法則を7つ。
+s11: 2026年の転機・今月の運勢2500字。月別（4月〜12月）の運気と転機のタイミングを具体的に。
+s12: 同タイプの成功パターン・有名人800字。同タイプに近い著名人と成功パターン3つ。
+
+必ず ${nickname} という名前を各セクションで2〜3回使って語りかけてください。
+数字は具体的に（万円単位）。占いのような温かい文体で。`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{role:'user', content: userPrompt}]
+      })
+    });
+
+    const data = await response.json();
+    const rawText = data.content?.[0]?.text || '{}';
+    let reportData;
+    try {
+      reportData = JSON.parse(rawText.replace(/```json|```/g,'').trim());
+    } catch(e) {
+      reportData = {s01: rawText};
+    }
+
+    clearInterval(stepInterval);
+    $('genProgressBar').style.width = '100%';
+    $('genProgressText').textContent = '100%';
+    $('genStatus').textContent = '生成完了！';
+
+    // GASキャッシュ保存
+    sessionStorage.setItem(cacheKey, JSON.stringify(reportData));
+    if(SHEETS_URL && userEmail){
+      fetch(SHEETS_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'premium_report',
+        email: userEmail,
+        type_code: typeCode,
+        cache_key: cacheKey,
+      })}).catch(()=>{});
+    }
+
+    setTimeout(()=>{
+      genDiv.style.display = 'none';
+      document.body.style.overflow = '';
+      renderPremiumReport(reportData, nickname);
+    }, 800);
+
+  } catch(err) {
+    clearInterval(stepInterval);
+    genDiv.style.display = 'none';
+    document.body.style.overflow = '';
+    alert('レポート生成中にエラーが発生しました。もう一度お試しください。');
+    console.error(err);
+  }
+}
+
+function renderPremiumReport(data, nickname){
+  const {typeCode, td, inc} = resultData;
+  const bg = TYPE_BG[typeCode] || '#0a0a0a';
+  const aiScore = calcAIRiskScore(typeCode);
+  const riskLabel = getAIRiskLabel(aiScore);
+  const recoJob = RECO33[profile.job] || RECO33['other'];
+  const recoLv = calcJobChangeLevel();
+  const recos = recoJob[recoLv] || [];
+
+  const sectionHTML = (num, title, chars, content) => `
+    <div style="background:#fff;border:0.5px solid #e0d8cc;border-radius:8px;padding:20px 22px;margin-bottom:14px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
+        <div style="font-size:11px;color:#7a6f62;font-weight:500;min-width:28px;padding-top:2px;">${String(num).padStart(2,'0')}</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#0e0c0a;margin-bottom:2px;">${title}</div>
+          <div style="font-size:11px;color:#7a6f62;">約${chars}字</div>
+        </div>
+      </div>
+      <div style="font-size:13px;line-height:2;color:#0e0c0a;white-space:pre-wrap;">${content||'生成中...'}</div>
+    </div>`;
+
+  const html = `
+    <div style="background:${bg};color:#f5f0e8;padding:28px 20px 24px;border-radius:8px;margin-bottom:20px;">
+      <div style="font-size:10px;letter-spacing:0.2em;color:rgba(255,255,255,0.4);margin-bottom:8px;">MIRALE PREMIUM REPORT</div>
+      <div style="font-size:28px;font-weight:900;font-family:'Noto Serif JP',serif;margin-bottom:4px;">${td.emoji} ${td.name}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:16px;">${td.sub}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:4px;">${profile.age}歳</span>
+        <span style="font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:4px;">${profile.job}</span>
+        <span style="font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:4px;">年収${profile.income}万</span>
+        <span style="font-size:11px;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:4px;">ピーク${inc.peakIncome}万</span>
+      </div>
+    </div>
+
+    <div style="background:#f5f0e8;border:1px solid #cfc4b0;border-left:4px solid #b8962e;padding:14px 16px;margin-bottom:20px;border-radius:0 4px 4px 0;font-size:12px;color:#7a6f62;line-height:1.8;">
+      ${nickname}さんへ。このレポートはあなたの診断データとAIが生成した完全パーソナライズレポートです。
+    </div>
+
+    ${sectionHTML(1, '仕事DNA「光と影」', 800, data.s01)}
+    ${sectionHTML(2, 'キャリアタイムライン', 3000, data.s02)}
+    ${sectionHTML(3, '今の会社に残る場合のシナリオ', 1200, data.s03)}
+    ${sectionHTML(4, '転職シナリオ', 1200, data.s04)}
+    ${sectionHTML(5, '独立・副業シナリオ', 1000, data.s05)}
+    ${sectionHTML(6, '転職推奨ランキング詳細', 3000, data.s06)}
+    ${sectionHTML(7, 'AIリスク＋ファーストステップ', 1000, data.s07)}
+    ${sectionHTML(8, '周りからの評価・陥りやすい罠', 1000, data.s08)}
+    ${sectionHTML(9, 'ビジネス力と職場への影響', 800, data.s09)}
+    ${sectionHTML(10, 'ビジネスが上手くいく方法', 800, data.s10)}
+    ${sectionHTML(11, '2026年の転機・今月の運勢', 2500, data.s11)}
+    ${sectionHTML(12, '同タイプの成功パターン・有名人', 800, data.s12)}
+
+    <div style="background:#0e0c0a;border-radius:8px;padding:24px;text-align:center;margin-top:8px;">
+      <div style="font-size:11px;color:#555;margin-bottom:8px;letter-spacing:0.1em;">SHARE YOUR RESULT</div>
+      <button onclick="shareX()" style="background:#1a1a1a;color:#f5f0e8;border:1px solid #333;padding:12px 24px;font-size:13px;cursor:pointer;border-radius:4px;margin:4px;">𝕏 でシェア</button>
+      <button onclick="shareLine()" style="background:#06C755;color:#fff;border:none;padding:12px 24px;font-size:13px;cursor:pointer;border-radius:4px;margin:4px;">LINE で送る</button>
+      <div style="margin-top:16px;">
+        <button onclick="restart()" style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;text-decoration:underline;">もう一度診断する</button>
+      </div>
+    </div>`;
+
+  $('premiumReportContent').innerHTML = html;
+  show('s-premium-report');
+  setPbar(100);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function showFullResult(paid=false){
