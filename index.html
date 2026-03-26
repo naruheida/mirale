@@ -1679,7 +1679,7 @@ function updateOccupation(){
     ? opts.map(o=>`<option value="${o}">${o}</option>`).join('')
     : '<option value="">先に業界を選択してください</option>';
 }
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyrf0X1E1ki-1YR1BWQRrBYXppKDJgw8ENk0Jobi6tvoP1Eqc5P1eBBHUyrFM2EfpvjyA/exec';
+const SHEETS_URL = 'https://mirale-proxy.narumottin.workers.dev';
 
 function $(id){return document.getElementById(id);}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
