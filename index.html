@@ -1949,90 +1949,59 @@ async function startReportGeneration(){
     const recoLv = calcJobChangeLevel();
     const recos = recoJob[recoLv] || [];
 
-    const systemPrompt = `あなたはMiraleというキャリア診断サービスのプレミアムレポートライターです。
-統計データに基づいた具体的な数字と、占い師のような温かく語りかける文体を組み合わせた文章を書きます。
-必ずユーザーの名前（ニックネーム）を自然に使いながら語りかけてください。
-各セクションは指定の文字数を守り、改行を適切に入れて読みやすくしてください。
-JSONのみで返答してください。マークダウンや\`\`\`は不要です。`;
+    const systemPrompt = `あなたはMiraleというキャリア診断サービスのプレミアムレポートライターです。統計データに基づいた具体的な数字と、占い師のような温かく語りかける文体を組み合わせた文章を書きます。必ずユーザーの名前を自然に使いながら語りかけてください。JSONのみで返答してください。前後の説明文やマークダウンは不要です。`;
 
-    const userPrompt = `以下のユーザーデータに基づいてMiraleプレミアムレポートを日本語で生成してください。
+    const userData = `ニックネーム:${nickname} タイプ:${typeCode}(${td.name}) 年齢:${profile.age}歳 役職:${rankNames[profile.rank||0]} 業界:${jobNames[profile.job]||profile.job} 職種:${profile.occupation||'未回答'} 規模:${profile.size} 年収:${profile.income}万 ピーク:${inc.peakIncome}万 停止年齢:${inc.stopAge}歳 生涯賃金:${Math.round(inc.lifetime/10000)}億 転職回数:${profile.jobChange}回 転職意向:${intentLv} AIリスク:${aiScore}/100 推奨1位:${recos[0]?recos[0].i:''}`;
 
-【ユーザー情報】
-ニックネーム: ${nickname}
-タイプコード: ${typeCode}
-タイプ名: ${td.name}（${td.sub}）
-年齢: ${profile.age}歳
-現在の役職: ${rankNames[profile.rank||0]}
-業界: ${jobNames[profile.job]||profile.job}
-職種: ${profile.occupation||'未回答'}
-会社規模: ${profile.size}
-現在年収: ${profile.income}万円
-推定ピーク年収: ${inc.peakIncome}万円
-昇給停止推定年齢: ${inc.stopAge}歳
-役職定年後年収: ${inc.afterCut}万円
-推定生涯賃金: ${Math.round(inc.lifetime/10000)}億円
-転職回数: ${profile.jobChange}回
-雇用形態: ${profile.empType}
-仕事で重視すること: ${profile.priority}
-転職意向レベル: ${intentLv}
-AI代替リスクスコア: ${aiScore}/100
-最高到達推定役職: ${inc.maxRankName}
-転職推奨1位: ${recos[0]?recos[0].i:''}（${recos[0]?recos[0].b:''}）
-転職推奨2位: ${recos[1]?recos[1].i:''}
-転職推奨3位: ${recos[2]?recos[2].i:''}
+    // 4グループに分けて並列生成
+    const groups = [
+      { keys:['s01','s02','s03'], prompt:`${userData}
 
-以下の12セクションをJSONで生成してください。各セクションのkeyはs01〜s12です。
-s01: 仕事DNA「光と影」800字。タイプの本質・強みと弱みを語りかける文体で。
-s02: キャリアタイムライン3000字。現在から65歳まで5年刻みで年齢別に詳細に書く。各年代で何が起きるかを具体的に。
-s03: 今の会社に残る場合1200字。3つのシナリオ（楽観・標準・悲観）と具体的な年収数字を含めて。
-s04: 転職シナリオ1200字。転職先3パターンの年収シミュレーションと転職タイミングの具体的アドバイス。
-s05: 独立・副業シナリオ1000字。今すぐできる副業から独立までの段階的ロードマップ。
-s06: 転職推奨ランキング詳細3000字。5社の具体的な企業名・転職後年収・面接対策を詳しく。
-s07: AIリスク＋ファーストステップ1000字。スコア${aiScore}/100の意味と今月やること。
-s08: 周りからの評価・陥りやすい罠1000字。職場での評判と繰り返しやすい失敗パターン。
-s09: ビジネス力と職場への影響800字。あなたが組織に与えている見えない価値を数値で。
-s10: ビジネスが上手くいく方法800字。このタイプ専用の成功法則を7つ。
-s11: 2026年の転機・今月の運勢2500字。月別（4月〜12月）の運気と転機のタイミングを具体的に。
-s12: 同タイプの成功パターン・有名人800字。同タイプに近い著名人と成功パターン3つ。
+以下3セクションをJSONで生成(キー:s01,s02,s03):
+s01:仕事DNA光と影800字。${nickname}への語りかけ文体で強みと影を。
+s02:キャリアタイムライン2000字。現在から65歳まで年齢別に具体的に。
+s03:今の会社に残る場合1000字。楽観・標準・悲観の3シナリオと年収数字。` },
+      { keys:['s04','s05','s06'], prompt:`${userData}
 
-必ず ${nickname} という名前を各セクションで2〜3回使って語りかけてください。
-数字は具体的に（万円単位）。占いのような温かい文体で。`;
+以下3セクションをJSONで生成(キー:s04,s05,s06):
+s04:転職シナリオ1000字。3パターンの転職先と年収シミュレーション。
+s05:独立・副業シナリオ800字。今すぐできる副業から独立までのロードマップ。
+s06:転職推奨ランキング詳細2000字。具体的な企業名5社・年収・面接対策。` },
+      { keys:['s07','s08','s09'], prompt:`${userData}
 
-    const response = await fetch(SHEETS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        type: 'generate_report',
-        system: systemPrompt,
-        prompt: userPrompt
-      })
-    });
+以下3セクションをJSONで生成(キー:s07,s08,s09):
+s07:AIリスク+ファーストステップ800字。スコア${aiScore}/100の意味と今月やること。
+s08:周りからの評価・陥りやすい罠800字。職場での評判と失敗パターン。
+s09:ビジネス力と職場への影響700字。組織に与えている見えない価値を数値で。` },
+      { keys:['s10','s11','s12'], prompt:`${userData}
 
-    const data = await response.json();
-    const rawText = data.text || '{}';
-    let reportData;
-    try {
-      reportData = JSON.parse(rawText.replace(/```json|```/g,'').trim());
-    } catch(e) {
-      reportData = {s01: rawText};
-    }
+以下3セクションをJSONで生成(キー:s10,s11,s12):
+s10:ビジネスが上手くいく方法700字。${nickname}専用の成功法則7つ。
+s11:2026年の転機・今月の運勢2000字。月別（4月〜12月）の運気と転機。
+s12:同タイプの成功パターン・有名人700字。著名人と成功パターン3つ。` },
+    ];
+
+    // 並列でAPI呼び出し
+    const results = await Promise.all(groups.map(g =>
+      fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ type: 'generate_report', system: systemPrompt, prompt: g.prompt })
+      }).then(r => r.json()).then(d => {
+        try { return JSON.parse((d.text||'{}').replace(/```json|```/g,'').trim()); }
+        catch(e) { return {}; }
+      }).catch(() => ({}))
+    ));
+
+    // 結果をマージ
+    const reportData = Object.assign({}, ...results);
 
     clearInterval(stepInterval);
     $('genProgressBar').style.width = '100%';
     $('genProgressText').textContent = '100%';
     $('genStatus').textContent = '生成完了！';
 
-    // GASキャッシュ保存
     sessionStorage.setItem(cacheKey, JSON.stringify(reportData));
-    if(SHEETS_URL && userEmail){
-      fetch(SHEETS_URL, {method:'POST', mode:'no-cors', body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        type: 'premium_report',
-        email: userEmail,
-        type_code: typeCode,
-        cache_key: cacheKey,
-      })}).catch(()=>{});
-    }
 
     setTimeout(()=>{
       genDiv.style.display = 'none';
