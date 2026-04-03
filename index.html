@@ -1975,6 +1975,13 @@ function showTeaser(){show('s-teaser');window.scrollTo({top:0});}
 
 // ── テスト用隠しコマンド（ロゴを5回タップで有料レポート解放）──
 let _logoTapCount = 0, _logoTapTimer = null;
+
+// URLパラメータでテストモード判定
+const _urlParams = new URLSearchParams(window.location.search);
+if(_urlParams.get('test') === 'mirale2024'){
+  window._testMode = true;
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
   const logo = document.querySelector('.logo');
   if(logo){
@@ -1984,17 +1991,23 @@ document.addEventListener('DOMContentLoaded', ()=>{
       _logoTapTimer = setTimeout(()=>{ _logoTapCount=0; }, 2000);
       if(_logoTapCount >= 5){
         _logoTapCount = 0;
-        // 有料レポートモードを一時解放
         window._testMode = true;
         alert('🔓 テストモード解放！\nレポート生成が使えます');
       }
     });
   }
+
+  // テストモード時はバナーを表示
+  if(window._testMode){
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#d4af50;color:#000;text-align:center;padding:8px;font-size:12px;font-weight:700;z-index:9999;';
+    banner.textContent = '🔓 テストモード有効 — 有料レポートが利用可能です';
+    document.body.appendChild(banner);
+  }
 });
 
 function purchase(){
   if(window._testMode){
-    // テストモード時は通常の購入フローへ
     $('nicknameModal').style.display='flex';
     document.body.style.overflow='hidden';
     return;
