@@ -599,7 +599,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     </div>
     <div class="pg-price-wrap"><div class="pg-price">¥980</div><div class="pg-price-unit">買い切り・購入後すぐ閲覧</div></div>
     <div class="pg-price-sub">Stripe決済 ｜ クレジットカード対応 ｜ 決済完了後に専用URLを発行</div>
-    <button class="pg-btn" onclick="purchase()">詳細レポートを購入して全部見る →</button>
+    <button class="pg-btn" onclick="purchase()" style="opacity:0.6;cursor:not-allowed;background:#555;">🔜 有料レポート 近日公開予定</button>
     <button class="pg-sub-btn" onclick="showFullResult()">▼ 無料で続きをチラ見せ（一部のみ）</button>
     <div class="pg-note">※ デジタルコンテンツのため、購入後の返金は原則対応できません</div>
   </div>
@@ -802,7 +802,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <div style="font-size:9px;letter-spacing:0.3em;color:var(--gold2);font-weight:700;margin-bottom:12px;">FULL REPORT — ¥980</div>
     <div style="font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;line-height:1.6;margin-bottom:8px;">生涯賃金・転職戦略の全貌を<br>今すぐ確認する</div>
     <div style="font-size:12px;color:rgba(245,240,232,0.55);margin-bottom:24px;line-height:1.7;">昇給停止年齢・生涯最高年収・あなた専用の<br>3つの打ち手がすべて見られます</div>
-    <button onclick="showTeaser()" style="display:block;width:100%;padding:18px;background:var(--red);color:#fff;border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:pointer;margin-bottom:10px;">詳細レポートを購入する（¥980）→</button>
+    <button onclick="purchase()" style="display:block;width:100%;padding:18px;background:#555;color:#fff;border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:not-allowed;margin-bottom:10px;opacity:0.6;">🔜 有料レポート 近日公開予定</button>
     <div style="font-size:10px;color:rgba(245,240,232,0.35);">Stripe決済 ｜ 購入後すぐ閲覧可能</div>
   </div>
   <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。</div>
@@ -1973,9 +1973,33 @@ function computeAndShowTeaser(){
 
 function showTeaser(){show('s-teaser');window.scrollTo({top:0});}
 
+// ── テスト用隠しコマンド（ロゴを5回タップで有料レポート解放）──
+let _logoTapCount = 0, _logoTapTimer = null;
+document.addEventListener('DOMContentLoaded', ()=>{
+  const logo = document.querySelector('.logo');
+  if(logo){
+    logo.addEventListener('click', ()=>{
+      _logoTapCount++;
+      clearTimeout(_logoTapTimer);
+      _logoTapTimer = setTimeout(()=>{ _logoTapCount=0; }, 2000);
+      if(_logoTapCount >= 5){
+        _logoTapCount = 0;
+        // 有料レポートモードを一時解放
+        window._testMode = true;
+        alert('🔓 テストモード解放！\nレポート生成が使えます');
+      }
+    });
+  }
+});
+
 function purchase(){
-  $('nicknameModal').style.display='flex';
-  document.body.style.overflow='hidden';
+  if(window._testMode){
+    // テストモード時は通常の購入フローへ
+    $('nicknameModal').style.display='flex';
+    document.body.style.overflow='hidden';
+    return;
+  }
+  alert('有料レポートは現在準備中です。近日公開予定！\nしばらくお待ちください🙏');
 }
 function closeNicknameModal(){
   $('nicknameModal').style.display='none';
