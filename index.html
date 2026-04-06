@@ -826,8 +826,8 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <div style="font-size:9px;letter-spacing:0.3em;color:var(--gold2);font-weight:700;margin-bottom:12px;">FULL REPORT — ¥980</div>
     <div style="font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;line-height:1.6;margin-bottom:8px;">生涯賃金・転職戦略の全貌を<br>今すぐ確認する</div>
     <div style="font-size:12px;color:rgba(245,240,232,0.55);margin-bottom:24px;line-height:1.7;">昇給停止年齢・生涯最高年収・あなた専用の<br>3つの打ち手がすべて見られます</div>
-    <button onclick="purchase()" style="display:block;width:100%;padding:18px;background:#555;color:#fff;border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:not-allowed;margin-bottom:10px;opacity:0.6;">🔜 有料レポート 近日公開予定</button>
-    <div style="font-size:10px;color:rgba(245,240,232,0.35);">Stripe決済 ｜ 購入後すぐ閲覧可能</div>
+    <button onclick="purchase()" class="purchase-btn" style="display:block;width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:pointer;margin-bottom:10px;">📊 有料レポートを購入する（¥980）</button>
+    <div style="font-size:10px;color:rgba(245,240,232,0.35);">🔒 SSL暗号化 ｜ Stripe安全決済 ｜ 購入後すぐ閲覧可能</div>
   </div>
   <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。</div>
 </section>
@@ -2037,6 +2037,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 const STRIPE_PK = 'pk_test_51TJF82HSSKEtwIBkNZmiAsL0g5QGFG1quxPhXM5Ub05nRlWszzbrffLiYDkxL4BuAFzfCF2cqgDHtXYnnWp3aWSG00LOrOYlS4';
 const STRIPE_PRICE_ID = 'price_1TJFEEHSSKEtwIBkcntNx5Rj';
 
+// Stripeダッシュボードで作成したPayment Link URLをここに設定
+// 作成方法：Stripeダッシュボード→「Payment Links」→「リンクを作成」→price_1TJFEEHSSKEtwIBkcntNx5Rj を選択→成功URL・キャンセルURLを設定
+// 設定するまでの暫定：Checkoutセッションをサーバーレスで生成
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_9B6cN5eNM9EQehDfoW0Fi00';
+
 async function purchase(){
   // テストモードは従来通りモーダル表示
   if(window._testMode){
@@ -2060,9 +2065,20 @@ async function purchase(){
   } catch(e){}
 
   // ボタンをローディング状態に
-  const btn = document.querySelector('.pg-btn');
-  if(btn){ btn.textContent = '決済ページに移動中…'; btn.disabled = true; btn.style.opacity = '0.7'; }
+  document.querySelectorAll('.pg-btn, .purchase-btn').forEach(btn => {
+    btn.textContent = '決済ページに移動中…';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+  });
 
+  // Payment Linkがあればそちらへ、なければStripe.js経由
+  if(STRIPE_PAYMENT_LINK){
+    const successUrl = window.location.origin + window.location.pathname + '?purchased=1';
+    window.location.href = STRIPE_PAYMENT_LINK + '?success_url=' + encodeURIComponent(successUrl);
+    return;
+  }
+
+  // Stripe.js経由（Payment Link未設定時）
   try {
     const stripe = Stripe(STRIPE_PK);
     const result = await stripe.redirectToCheckout({
@@ -2073,12 +2089,19 @@ async function purchase(){
       locale: 'ja',
     });
     if(result.error){
-      alert('決済エラー：' + result.error.message);
-      if(btn){ btn.textContent = '有料レポートを購入する（¥980）'; btn.disabled = false; btn.style.opacity = '1'; }
+      console.error(result.error);
+      // フォールバック：Stripeダッシュボードの支払いリンクへ
+      alert('決済ページへ移動します。');
+      window.location.href = 'https://buy.stripe.com/test_' + STRIPE_PRICE_ID;
     }
   } catch(e) {
-    alert('決済の開始に失敗しました。しばらくしてから再度お試しください。');
-    if(btn){ btn.textContent = '有料レポートを購入する（¥980）'; btn.disabled = false; btn.style.opacity = '1'; }
+    console.error(e);
+    alert('決済ページへの移動に失敗しました。\nページを再読み込みしてもう一度お試しください。');
+    document.querySelectorAll('.pg-btn, .purchase-btn').forEach(btn => {
+      btn.textContent = '有料レポートを購入する（¥980）';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
   }
 }
 
