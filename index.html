@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mirale｜統計が暴く、あなたの30年後</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
 <style>
 :root{--ink:#0e0c0a;--paper:#f5f0e8;--paper2:#ede7d8;--red:#c0392b;--red2:#e74c3c;--gold:#b8962e;--gold2:#d4af50;--muted:#7a6f62;--border:#cfc4b0;--white:#fdfaf5;--green:#27ae60;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -316,9 +317,9 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <div class="form-hint">18〜65歳の実年齢を入力してください</div>
   </div>
   <div class="form-row">
-    <label class="form-label">生まれ月 <em>*</em></label>
-    <select id="p-birthmonth" onchange="checkProfile()">
-      <option value="">選択してください</option>
+    <label class="form-label">生まれ月 <span style="font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;">レポートの精度向上に使用します</span></label>
+    <select id="p-birthmonth">
+      <option value="">選択してください（任意）</option>
       <option value="1">1月</option>
       <option value="2">2月</option>
       <option value="3">3月</option>
@@ -332,7 +333,6 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
       <option value="11">11月</option>
       <option value="12">12月</option>
     </select>
-    <div class="form-hint">生まれ月によって異なるキャリア傾向を分析します</div>
   </div>
   <div class="form-row">
     <label class="form-label">現在の役職 <em>*</em></label>
@@ -617,8 +617,13 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
       </div>
     </div>
     <div class="pg-price-wrap"><div class="pg-price">¥980</div><div class="pg-price-unit">買い切り・購入後すぐ閲覧</div></div>
-    <div class="pg-price-sub">Stripe決済 ｜ クレジットカード対応 ｜ 決済完了後に専用URLを発行</div>
-    <button class="pg-btn" onclick="purchase()" style="opacity:0.6;cursor:not-allowed;background:#555;">🔜 有料レポート 近日公開予定</button>
+    <div class="pg-price-sub">Stripe決済 ｜ クレジットカード対応 ｜ 決済完了後すぐ閲覧可能</div>
+    <button class="pg-btn" onclick="purchase()">📊 有料レポートを購入する（¥980）</button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;font-size:11px;color:rgba(245,240,232,0.4);">
+      <span>🔒 SSL暗号化通信</span>
+      <span>💳 Stripe安全決済</span>
+      <span>⚡ 購入後すぐ閲覧</span>
+    </div>
     <button class="pg-sub-btn" onclick="showFullResult()">▼ 無料で続きをチラ見せ（一部のみ）</button>
     <div class="pg-note">※ デジタルコンテンツのため、購入後の返金は原則対応できません</div>
   </div>
@@ -1787,8 +1792,7 @@ function goProfile(){show('s-profile');setPbar(5);}
 function checkProfile(){
   const age = parseInt($('p-age').value);
   const ageOk = age >= 18 && age <= 65;
-  const birthMonthOk = $('p-birthmonth') && $('p-birthmonth').value !== '';
-  const ok = ageOk && birthMonthOk && $('p-rank').value!==''&&$('p-job').value&&$('p-size').value&&$('p-income').value;
+  const ok = ageOk && $('p-rank').value!==''&&$('p-job').value&&$('p-size').value&&$('p-income').value;
   $('pnextBtn').disabled=!ok;
   // 範囲外の場合は入力欄を赤くする
   const ageEl = $('p-age');
@@ -1801,7 +1805,6 @@ function checkProfile(){
 function showLogin(){
   profile={
     age:parseInt($('p-age').value),
-    birthMonth:parseInt($('p-birthmonth').value) || 0,
     rank:parseInt($('p-rank').value||0),
     job:$('p-job').value,
     size:$('p-size').value,
@@ -1825,6 +1828,7 @@ function showLogin(){
     occupation:$('p-occupation').value||'',
     moya:$('moya').value||'',
     timing:$('timing').value||'',
+    birthMonth:parseInt($('p-birthmonth').value)||0,
   };
   show('s-login');setPbar(12);
 }
@@ -2027,14 +2031,57 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 
-function purchase(){
+// ============================================================
+// Stripe設定
+// ============================================================
+const STRIPE_PK = 'pk_test_51TJF82HSSKEtwIBkNZmiAsL0g5QGFG1quxPhXM5Ub05nRlWszzbrffLiYDkxL4BuAFzfCF2cqgDHtXYnnWp3aWSG00LOrOYlS4';
+const STRIPE_PRICE_ID = 'price_1TJFEEHSSKEtwIBkcntNx5Rj';
+
+async function purchase(){
+  // テストモードは従来通りモーダル表示
   if(window._testMode){
     $('nicknameModal').style.display='flex';
     document.body.style.overflow='hidden';
     return;
   }
-  alert('有料レポートは現在準備中です。近日公開予定！\nしばらくお待ちください🙏');
+
+  // 購入前に診断データをlocalStorageに保存（決済後に復元するため）
+  try {
+    const stateToSave = {
+      screen: 's-teaser',
+      profile,
+      answers,
+      resultData: resultData.typeCode ? { typeCode: resultData.typeCode, inc: resultData.inc } : null,
+      isPurchased: false,
+      userEmail,
+      pbar: 90
+    };
+    localStorage.setItem('mirale_pre_purchase', JSON.stringify(stateToSave));
+  } catch(e){}
+
+  // ボタンをローディング状態に
+  const btn = document.querySelector('.pg-btn');
+  if(btn){ btn.textContent = '決済ページに移動中…'; btn.disabled = true; btn.style.opacity = '0.7'; }
+
+  try {
+    const stripe = Stripe(STRIPE_PK);
+    const result = await stripe.redirectToCheckout({
+      lineItems: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      mode: 'payment',
+      successUrl: window.location.origin + window.location.pathname + '?purchased=1',
+      cancelUrl: window.location.href,
+      locale: 'ja',
+    });
+    if(result.error){
+      alert('決済エラー：' + result.error.message);
+      if(btn){ btn.textContent = '有料レポートを購入する（¥980）'; btn.disabled = false; btn.style.opacity = '1'; }
+    }
+  } catch(e) {
+    alert('決済の開始に失敗しました。しばらくしてから再度お試しください。');
+    if(btn){ btn.textContent = '有料レポートを購入する（¥980）'; btn.disabled = false; btn.style.opacity = '1'; }
+  }
 }
+
 function closeNicknameModal(){
   $('nicknameModal').style.display='none';
   document.body.style.overflow='';
@@ -2096,137 +2143,89 @@ async function startReportGeneration(){
     const recoLv = calcJobChangeLevel();
     const recos = recoJob[recoLv] || [];
 
-    // ===== 3層コンテキスト生成 =====
     const birthYear = new Date().getFullYear() - profile.age;
     const birthMonth = profile.birthMonth || 0;
     const entryYear = birthYear + 22;
 
     // 層1：入社年の経済背景
     const economicContext =
-      entryYear <= 1993 ? 'バブル崩壊直後（' + entryYear + '年入社）。終身雇用・年功序列が当たり前だった最後の世代。大手に入れば一生安泰という幻想がまだ生きていた時代' :
-      entryYear <= 2004 ? '就職氷河期（' + entryYear + '年入社）。内定ゼロが当たり前で、自己責任論が社会に蔓延した時代。非正規・派遣という選択を余儀なくされた世代' :
-      entryYear <= 2008 ? 'いざなみ景気の恩恵世代（' + entryYear + '年入社）。売り手市場で入社したが、リーマンショックで昇給凍結・リストラの洗礼を受けた' :
-      entryYear <= 2013 ? 'リーマン直撃世代（' + entryYear + '年入社）。派遣・非正規が急増した時代に社会に出て、最初から「正社員の壁」を感じ続けた世代' :
-      entryYear <= 2020 ? 'アベノミクス恩恵世代（' + entryYear + '年入社）。売り手市場で複数内定が当たり前。しかし副業解禁・働き方改革の波に最初から乗り続けた' :
-      'コロナ禍入社（' + entryYear + '年入社）。リモートで始まりオフィス文化を知らない。Z世代的な価値観と高速キャリアチェンジが当たり前の環境で育った';
+      entryYear <= 1993 ? 'バブル崩壊直後。終身雇用が当たり前だった最後の世代。「会社に忠誠を誓えば報われる」という価値観が染み付いた時代' :
+      entryYear <= 2004 ? '就職氷河期。内定ゼロが当たり前で自己責任論が蔓延した時代。統計的にこの世代の生涯賃金は他世代より約1,500万円低い' :
+      entryYear <= 2008 ? 'いざなみ景気の恩恵世代。しかしリーマンショックが直撃し、キャリアの転換点を強制された世代' :
+      entryYear <= 2013 ? 'リーマン直撃世代。派遣・非正規が急増した時代に社会に出た。「正社員になれただけで御の字」という意識が染み付いている' :
+      entryYear <= 2020 ? 'アベノミクス恩恵世代。売り手市場で複数内定が当たり前。転職を「当然の選択肢」として育った最初の世代' :
+      'コロナ禍入社。リモートで始まりオフィス文化を知らない世代。対面でのキャリア形成という概念が希薄';
 
-    // 層2：生まれ月の傾向
-    const monthContext =
-      birthMonth >= 4 && birthMonth <= 6 ? birthMonth + '月生まれ。日本の学年制度で最年長グループ。幼少期から「できる子」として扱われリーダー役を経験しやすい。自信の土台が早くから形成された傾向がある' :
-      birthMonth >= 7 && birthMonth <= 9 ? birthMonth + '月生まれ。学年の中間に位置し、協調性と自己主張のバランスが自然に培われた。「調整役」として組織で重宝されることが多い' :
-      birthMonth >= 10 && birthMonth <= 12 ? birthMonth + '月生まれ。学年で最年少グループの一角。「追いつく」経験が向上心の原点になりやすく、努力を美徳と感じる傾向が強い' :
-      birthMonth >= 1 && birthMonth <= 3 ? birthMonth + '月生まれ（早生まれ）。学年で常に最年少。差を努力で埋めてきた経験が忍耐力・レジリエンスの源泉。土壇場で力を発揮するタイプが多い' : '生まれ月のデータなし';
+    // 層2：生まれ月の傾向（birthMonthが0の場合はスキップ）
+    const monthContext = birthMonth === 0 ? '' :
+      birthMonth >= 4 && birthMonth <= 6 ? `${birthMonth}月生まれ。日本の学年制度で「早生まれではない」最初期。幼少期にリーダー役を経験しやすく、自己肯定感が形成されやすい傾向。スポーツでも勉強でも「少しだけ有利」な位置からスタートした可能性が高い` :
+      birthMonth >= 7 && birthMonth <= 9 ? `${birthMonth}月生まれ。学年の中間。協調性と自己主張のバランスが取れやすく、「目立ちすぎず、埋もれもしない」ポジションを自然に取れる傾向` :
+      birthMonth >= 10 && birthMonth <= 12 ? `${birthMonth}月生まれ。学年で最年少グループ。「追いつく」経験が向上心の原点になりやすい。年上との協業・折衝で自然に鍛えられてきた世代` :
+      `${birthMonth}月生まれ（早生まれ）。学年で常に最年少。努力で差を埋めてきた経験が忍耐力の源泉になっている。「実力より実年齢が上に見られる」という逆のハンデが、40代以降に逆転する傾向がある`;
 
     // 層3：現在の年齢ステージ
     const ageStageContext =
-      profile.age <= 29 ? '20代（キャリア基盤形成期）：最初の10年で何を選ぶかが生涯賃金の分岐点を決定する。今の選択は10年後に3倍の差になる' :
-      profile.age <= 34 ? '30代前半（専門性確立期）：この5年で「何者か」が決まる最重要フェーズ。専門スキルへの投資リターンが最大化する年代' :
-      profile.age <= 39 ? '30代後半（キャリア分岐点）：管理職か専門職か・転職か残留かの最終判断期。この選択が40代の年収を100〜300万変える' :
-      profile.age <= 44 ? '40代前半（市場価値ピーク期）：昇給ポテンシャルが最も高い時期。転職するなら今が最後のゴールデンタイム' :
-      profile.age <= 49 ? '40代後半（戦略策定期）：昇給停止が視野に入る。残り10〜15年の戦略を今立てるかどうかで、老後の資産が数千万変わる' :
-      '50代（第二キャリア設計期）：役職定年・早期退職の波が来る前に第二のキャリアを設計する必要がある。今動けば選択肢はまだある';
+      profile.age <= 29 ? '20代：キャリアの基盤形成期。最初の10年で何を選ぶかが生涯賃金を決定する。この時期の年収差は30代に2倍以上に開く統計がある' :
+      profile.age <= 34 ? '30代前半：専門性確立期。この5年で「何者か」が決まる最重要フェーズ。市場価値が最も急上昇する時期であり、転職効果も最大化される' :
+      profile.age <= 39 ? '30代後半：キャリアの分岐点。管理職か専門職か・転職か残留かの最終判断期。40歳を超えると転職市場での評価軸が根本的に変わる' :
+      profile.age <= 44 ? '40代前半：昇給ピーク直前。市場価値が最も高い時期であり、動くなら今が最後のチャンス。この判断が退職金を含む生涯収入に直結する' :
+      profile.age <= 49 ? '40代後半：昇給停止が視野に入る。残り10年の戦略を今立てなければ、60代以降の生活水準が確定してしまう' :
+      '50代：役職定年対策が急務。第二のキャリアを今から設計する必要がある。統計的に、50代で動かなかった人の7割が65歳以降の収入に後悔している';
 
-    const systemPrompt = `あなたはMiraleのプレミアムレポートライターです。以下のルールを厳守してください。
+    const systemPrompt = `あなたはMiraleのプレミアムレポートライターです。
+以下のルールを厳守してください：
 
 【絶対ルール】
-- 各セクションを指定字数以上で書き、合計15,000字以上になるよう徹底すること
-- 具体的な数字（年収・パーセンテージ・年数）・実在する企業名・統計出典を必ず含める
-- 占い的・抽象的な表現を避け、経済学・心理学・統計の言語で語ること
-- ユーザーの名前（${nickname}）を各セクションで自然に2〜3回使いながら語りかけること
-- 無料版で既出の内容（タイプの基本説明・アクション3つ・転職推奨ランキングの業界名と説明）は一切繰り返さないこと
+- 合計15,000字以上になるよう各セクションを書く（指定字数を必ず守る）
+- 具体的な数字・企業名・事例を必ず含める（「〜など」ではなく実名で書く）
+- 占い的・抽象的な表現を避け、統計・経済・心理学の言葉で語る
+- ユーザーの名前（${nickname}）を自然に使いながら語りかける
+- 無料版で既出の内容（タイプの基本説明・アクション3つ）は繰り返さない
 
 【語り口の核心】
-「${economicContext}」という時代に社会に出た${nickname}が、「${monthContext}」という背景を持ち、今「${ageStageContext}」にいる——この3つの交点から語ること。占いではなく、構造的必然として語ること。
+"${economicContext}"という時代に社会に出た${nickname}が、
+${monthContext ? `"${monthContext}"という背景を持ち、` : ''}
+今"${ageStageContext}"にいる——
+この${monthContext ? '3つ' : '2つ'}の交点から語る。占いではなく、構造的必然として。
+
+【禁止事項】
+- 無料版のpersonalityテキストと同じ内容の繰り返し
+- 「〜かもしれません」「〜でしょう」などの曖昧な表現
+- CORE_MESSAGE・STATE_COPY・ACTION_COPYの内容の繰り返し
 
 JSONのみで返答。前後の説明文やマークダウン不要。`;
 
-    const userData = `【基本データ】ニックネーム:${nickname} / タイプ:${typeCode}(${td.name}) / 年齢:${profile.age}歳 / 役職:${rankNames[profile.rank||0]} / 業界:${jobNames[profile.job]||profile.job} / 職種:${profile.occupation||'未回答'} / 規模:${profile.size} / 年収:${profile.income}万 / ピーク年収:${inc.peakIncome}万 / 昇給停止年齢:${inc.stopAge}歳 / 生涯賃金:${Math.round(inc.lifetime/10000)}億 / 転職回数:${profile.jobChange}回 / 転職意向:${intentLv} / AIリスク:${aiScore}/100 / 転職推奨1位:${recos[0]?recos[0].i:''}
-【3層コンテキスト】
-・経済背景:${economicContext}
-・生まれ月:${monthContext}
-・年齢ステージ:${ageStageContext}`;
+    const userData = `ニックネーム:${nickname} タイプ:${typeCode}(${td.name}) 年齢:${profile.age}歳 入社年:${entryYear}年 生まれ月:${birthMonth||'未回答'}月 役職:${rankNames[profile.rank||0]} 業界:${jobNames[profile.job]||profile.job} 職種:${profile.occupation||'未回答'} 規模:${profile.size} 年収:${profile.income}万 ピーク:${inc.peakIncome}万 停止年齢:${inc.stopAge}歳 生涯賃金:${Math.round(inc.lifetime/10000)}億 転職回数:${profile.jobChange}回 転職意向:${intentLv} AIリスク:${aiScore}/100 推奨1位:${recos[0]?recos[0].i:''}
+経済背景:${economicContext}
+${monthContext?`生まれ月傾向:${monthContext}`:''}
+年齢ステージ:${ageStageContext}`;
 
     // 4グループに分けて並列生成
     const groups = [
       { keys:['s01','s02','s03'], prompt:`${userData}
 
 以下3セクションをJSONで生成(キー:s01,s02,s03):
-
-s01:【仕事DNA 光と影】1,500字以上。
-冒頭必須：${nickname}が社会に出た${entryYear}年の経済状況（${economicContext}）から語り始める。
-${birthMonth}月生まれの傾向（${monthContext}）を加味した上で、タイプ${typeCode}の強みを具体的エピソード付きで3つ描写する。
-弱点（影）を職場での具体的場面で2つ描写する。
-無料版のpersonalityテキストとは完全に異なる角度・深さで書くこと。
-
-s02:【キャリアタイムライン 完全版】2,500字以上。
-現在の${profile.age}歳から65歳まで、5年刻みで具体的なキャリアイベントを記述。
-各フェーズで「やるべきこと」「罠」「予想年収レンジ」を必ず含める。
-${ageStageContext}を踏まえ、今のフェーズに特に深く言及する。
-
-s03:【残留シナリオ 3ケース分析】1,200字以上。
-今の会社に残った場合の楽観・標準・悲観の3シナリオを具体的年収数字付きで分析する。
-各シナリオで「その確率」「その条件」「その場合の60歳時資産額」を明記する。
-${profile.income}万円という現在年収を起点に計算すること。` },
-
+s01:仕事DNA光と影800字。${nickname}への語りかけ文体で強みと影を。
+s02:キャリアタイムライン2000字。現在から65歳まで年齢別に具体的に。
+s03:今の会社に残る場合1000字。楽観・標準・悲観の3シナリオと年収数字。` },
       { keys:['s04','s05','s06'], prompt:`${userData}
 
 以下3セクションをJSONで生成(キー:s04,s05,s06):
-
-s04:【転職シナリオ 3パターン完全分析】1,500字以上。
-パターン1:同業界・ポジションアップ転職の年収シミュレーション（具体的な企業名3社以上・想定年収を含む）。
-パターン2:異業界へのキャリアチェンジ転職の年収シミュレーション（具体的な企業名3社以上・想定年収を含む）。
-パターン3:スタートアップ・ベンチャーへの転職（ストックオプション込みの想定リターンを含む）。
-タイプ${typeCode}×${economicContext}の組み合わせから見た「転職成功確率」も言及する。
-
-s05:【独立・副業ロードマップ】1,200字以上。
-フェーズ1（〜6ヶ月）・フェーズ2（〜1年）・フェーズ3（〜3年）に分けたロードマップ。
-タイプ${typeCode}に最も向いた副業形態（具体的なプラットフォーム名・単価目安を含む）。
-${ageStageContext}における独立のリスクとリターンを数字で語る。
-
-s06:【転職推奨ランキング 企業別深掘り】2,500字以上。
-無料版で出た業界名とは異なり、具体的な企業名を5社以上挙げて各社を詳述する。
-各社について：①推定オファー年収レンジ ②タイプ${typeCode}が活きる職種 ③面接で聞かれる頻出質問と回答例 ④${nickname}の強みをどうアピールするか。
-${birthMonth}月生まれの特性も絡めて語ること。` },
-
+s04:転職シナリオ1000字。3パターンの転職先と年収シミュレーション。
+s05:独立・副業シナリオ800字。今すぐできる副業から独立までのロードマップ。
+s06:転職推奨ランキング詳細2000字。具体的な企業名5社・年収・面接対策。` },
       { keys:['s07','s08','s09'], prompt:`${userData}
 
 以下3セクションをJSONで生成(キー:s07,s08,s09):
-
-s07:【AIリスク精密診断＋生存戦略】1,500字以上。
-スコア${aiScore}/100の詳細な意味を3段階（短期3年・中期7年・長期15年）で語る。
-タイプ${typeCode}がAI時代に強みを発揮できる具体的なポジション・役割を3つ挙げる。
-今月から実行できる「AI耐性強化アクション」を週単位で4週分記述する。
-${economicContext}世代がAI転換期にどう立ち回るべきかを統計データ付きで語る。
-
-s08:【他者評価×陥りやすい罠】1,200字以上。
-上司・同僚・部下それぞれから見た${nickname}（タイプ${typeCode}）の評価の実態を描写する。
-職場で繰り返しやすい失敗パターンを3つ、具体的なシーン付きで。
-${birthMonth}月生まれ特有の行動傾向がどう職場評価に影響するかを語る。
-
-s09:【組織への見えない貢献 定量化レポート】1,000字以上。
-タイプ${typeCode}が組織に与えている「数値化されにくい価値」を具体的なKPIで表現する。
-例：チーム生産性への貢献率・意思決定スピードへの影響・離職率低減効果など。
-${rankNames[profile.rank||0]}というポジションから見た${nickname}の組織内レバレッジを分析する。` },
-
+s07:AIリスク+ファーストステップ800字。スコア${aiScore}/100の意味と今月やること。
+s08:周りからの評価・陥りやすい罠800字。職場での評判と失敗パターン。
+s09:ビジネス力と職場への影響700字。組織に与えている見えない価値を数値で。` },
       { keys:['s10','s11','s12'], prompt:`${userData}
 
 以下3セクションをJSONで生成(キー:s10,s11,s12):
-
-s10:【${nickname}専用 成功法則7カ条】1,200字以上。
-タイプ${typeCode}×${ageStageContext}×${economicContext}世代の交点から導き出された、${nickname}だけに機能する成功法則を7つ。
-各法則は「なぜそれが機能するのか（心理学・行動経済学的根拠）」と「具体的な実践方法」をセットで記述する。
-抽象的な精神論ではなく、月曜日から使える行動レベルで語ること。
-
-s11:【2026年 月別転機カレンダー＆運気予報】2,500字以上。
-2026年4月〜12月（未来の月）を月ごとに詳述する。
-各月：①その月の経済・社会的なマクロイベント（実際の予定イベントを元に） ②タイプ${typeCode}にとっての転機度（★1〜5） ③具体的に取るべきアクション ④避けるべき行動。
-${birthMonth}月生まれという誕生月の数秘術的・統計的傾向も加味する。
-2026年内に${nickname}が最も大きな転機を迎える月と理由を明記する。
-
-s12:【同タイプ成功者の実名事例＆パターン抽出】1,000字以上。
-タイプ${typeCode}の著名人・実業家・経営者を実名で3〜5名挙げ、各人のキャリアパスを詳述する。
-彼らに共通する「成功の構造」を3つのパターンで抽出する。
-${nickname}が同じパターンを辿るための具体的なファーストアクションを各パターンで提示する。` },
+s10:ビジネスが上手くいく方法700字。${nickname}専用の成功法則7つ。
+s11:2026年の転機・今月の運勢2000字。月別（4月〜12月）の運気と転機。
+s12:同タイプの成功パターン・有名人700字。著名人と成功パターン3つ。` },
     ];
 
     // 並列でAPI呼び出し
@@ -3244,6 +3243,43 @@ function restoreState(){
 
 // ページ読み込み時に復元を試みる
 window.addEventListener('DOMContentLoaded', ()=>{
+  // ── 決済完了後の自動解放 ──
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('purchased') === '1'){
+    // URLから purchased=1 を除去（リロード対策）
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+
+    // 購入前に保存した診断データを復元
+    try {
+      const saved = localStorage.getItem('mirale_pre_purchase');
+      if(saved){
+        const state = JSON.parse(saved);
+        profile = state.profile || {};
+        answers = state.answers || {};
+        userEmail = state.userEmail || '';
+        if(state.resultData?.typeCode){
+          const typeCode = state.resultData.typeCode;
+          const td = WORK_DNA[typeCode] || WORK_DNA['ACXSM'];
+          const inc = state.resultData.inc;
+          resultData = {typeCode, td, inc};
+        }
+        localStorage.removeItem('mirale_pre_purchase');
+        isPurchased = true;
+        // ニックネームモーダルを表示してレポート生成へ
+        $('nicknameModal').style.display='flex';
+        document.body.style.overflow='hidden';
+        setPbar(90);
+        return;
+      }
+    } catch(e){}
+
+    // 保存データがない場合はトップに戻す
+    alert('購入ありがとうございます！\n診断をもう一度行ってレポートを生成してください。');
+    baseShow('s-intro');
+    return;
+  }
+
   if(!restoreState()){
     baseShow('s-intro');
   }
