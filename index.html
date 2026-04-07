@@ -3532,7 +3532,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
             <div style="font-size:11px;color:#888;">決済は完了しています。続きから再開できます。</div>
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;">
-            <button onclick="resumeReportGeneration('${state.nickname||'あなた'}')" style="padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">再開する →</button>
+            <button onclick="resumeReportGeneration(this.dataset.name)" data-name="${state.nickname||'あなた'}" style="padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">再開する →</button>
             <button onclick="dismissResumeBanner()" style="padding:10px 12px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;">✕</button>
           </div>`;
         // メインコンテンツの先頭に挿入（ヘッダーの下・コンテンツの上）
