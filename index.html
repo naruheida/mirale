@@ -864,7 +864,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <button onclick="purchase()" class="purchase-btn" style="display:block;width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:pointer;margin-bottom:10px;">📊 有料レポートを購入する（¥980）</button>
     <div style="font-size:10px;color:rgba(245,240,232,0.35);">🔒 SSL暗号化 ｜ Stripe安全決済 ｜ 購入後すぐ閲覧可能</div>
   </div>
-  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。</div>
+  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br>お問い合わせ：<a href="mailto:mirale.support@gmail.com" style="color:var(--muted);text-decoration:underline;">mirale.support@gmail.com</a></div>
 </section>
 </main>
 
@@ -873,16 +873,25 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
   <div style="background:var(--ink);color:var(--paper);max-width:440px;width:100%;padding:36px 28px;position:relative;border:1px solid #2a2a2a;">
     <div style="font-size:10px;letter-spacing:0.25em;color:var(--gold2);font-weight:700;margin-bottom:20px;">PREMIUM REPORT — ¥980</div>
     <div style="font-family:'Noto Serif JP',serif;font-size:20px;font-weight:900;line-height:1.5;margin-bottom:8px;">あなただけのレポートを<br>今すぐ生成します</div>
-    <div style="font-size:12px;color:#888;line-height:1.8;margin-bottom:28px;">Claude AIがあなたの診断データを分析し、約15,000字のパーソナライズレポートを生成します。生成には30〜60秒かかります。</div>
+    <div style="font-size:12px;color:#888;line-height:1.8;margin-bottom:24px;">Claude AIがあなたの診断データを分析し、約15,000字のパーソナライズレポートを生成します。生成には30〜60秒かかります。</div>
+
+    <!-- メールアドレス（未登録の場合のみ表示） -->
+    <div id="modalEmailWrap" style="margin-bottom:16px;">
+      <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:8px;">メールアドレス <span style="color:#e74c3c;">※必須</span></div>
+      <input id="modalEmailInput" type="email" placeholder="例：taro@gmail.com"
+        style="width:100%;padding:14px;background:#111;border:1px solid #333;color:var(--paper);font-size:15px;box-sizing:border-box;font-family:'Noto Sans JP',sans-serif;outline:none;">
+      <div style="font-size:10px;color:#555;margin-top:6px;">生成完了後の再閲覧・サポート対応に使用します</div>
+      <div id="modalEmailError" style="font-size:11px;color:#e74c3c;margin-top:6px;display:none;">メールアドレスを入力してください</div>
+    </div>
+
     <div style="margin-bottom:20px;">
       <div style="font-size:11px;color:#888;letter-spacing:0.1em;margin-bottom:8px;">レポート内での呼び名（任意）</div>
       <input id="nicknameInput" type="text" placeholder="例：たっちゃん、田中さん、なりくん" maxlength="20"
         style="width:100%;padding:14px;background:#111;border:1px solid #333;color:var(--paper);font-size:15px;box-sizing:border-box;font-family:'Noto Sans JP',sans-serif;outline:none;">
       <div style="font-size:10px;color:#555;margin-top:6px;">空欄の場合は「あなた」として生成します</div>
     </div>
-    <button onclick="startReportGeneration()" style="width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:10px;">レポートを生成する →</button>
+    <button onclick="startReportGenerationWithValidation()" style="width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;cursor:pointer;letter-spacing:0.05em;margin-bottom:10px;">レポートを生成する →</button>
     <button onclick="closeNicknameModal()" style="width:100%;padding:10px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">キャンセル</button>
-    <div style="margin-top:16px;font-size:10px;color:#444;text-align:center;line-height:1.8;">※ Stripe決済は近日実装予定。現在はテストとして無料でご利用いただけます。</div>
   </div>
 </div>
 
@@ -2088,8 +2097,10 @@ const STRIPE_PRICE_ID = 'price_1TJFEEHSSKEtwIBkcntNx5Rj';
 const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_9B6cN5eNM9EQehDfoW0Fi00';
 
 async function purchase(){
-  // テストモードは従来通りモーダル表示
+  // テストモードは従来通りモーダル表示（メール欄非表示）
   if(window._testMode){
+    const emailWrap = document.getElementById('modalEmailWrap');
+    if(emailWrap) emailWrap.style.display = 'none';
     $('nicknameModal').style.display='flex';
     document.body.style.overflow='hidden';
     return;
@@ -2159,22 +2170,70 @@ function closeModal(){ closeNicknameModal(); }
 // ============================================================
 // レポート生成メイン
 // ============================================================
+
+// キャッシュキーをグローバルで管理（リトライ時に再利用）
+let _reportCacheKey = '';
+let _reportNickname = '';
+let _isGenerating = false;
+
+// メール入力バリデーション付き生成開始
+function startReportGenerationWithValidation(){
+  const emailWrap = document.getElementById('modalEmailWrap');
+  const emailInput = document.getElementById('modalEmailInput');
+  const emailError = document.getElementById('modalEmailError');
+
+  // メール欄が表示されている場合（=本番購入後）はバリデーション
+  if(emailWrap && emailWrap.style.display !== 'none'){
+    const email = emailInput ? emailInput.value.trim() : '';
+    if(!email || !email.includes('@')){
+      if(emailError) emailError.style.display = 'block';
+      if(emailInput) emailInput.focus();
+      return;
+    }
+    if(emailError) emailError.style.display = 'none';
+    // メールアドレスをuserEmailに反映
+    userEmail = email;
+  }
+  startReportGeneration();
+}
+
+// beforeunload：生成中のリロード・タブ閉じを警告
+function _onBeforeUnload(e){
+  e.preventDefault();
+  e.returnValue = 'レポートを生成中です。このページを離れると最初からやり直しになります。';
+  return e.returnValue;
+}
+
 async function startReportGeneration(){
   const nickname = $('nicknameInput').value.trim() || 'あなた';
+  _reportNickname = nickname;
   closeNicknameModal();
 
-  // キャッシュチェック（同一メール2回目は即表示）
+  // キャッシュチェック（localStorage → ページリロード後も復元可能）
   const cacheKey = 'mirale_report_' + (userEmail || 'guest') + '_' + (resultData.typeCode||'');
-  const cached = sessionStorage.getItem(cacheKey);
+  _reportCacheKey = cacheKey;
+
+  // localStorage優先、なければsessionStorageも確認
+  const cached = localStorage.getItem(cacheKey) || sessionStorage.getItem(cacheKey);
   if(cached){
-    renderPremiumReport(JSON.parse(cached), nickname);
-    return;
+    try {
+      const data = JSON.parse(cached);
+      // データが空でないか確認
+      if(Object.keys(data).length > 0 && data.s01){
+        renderPremiumReport(data, nickname);
+        return;
+      }
+    } catch(e) {}
   }
 
   // 生成画面表示
   const genDiv = $('reportGenerating');
   genDiv.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // 生成中フラグON・離脱警告を登録
+  _isGenerating = true;
+  window.addEventListener('beforeunload', _onBeforeUnload);
 
   // プログレスアニメーション
   const steps = ['gs1','gs2','gs3','gs4','gs5','gs6'];
@@ -2315,12 +2374,27 @@ s12:【必須900字以上】同タイプの成功パターン・有名人。著�
     // 結果をマージ
     const reportData = Object.assign({}, ...results);
 
+    // セクションが1つも生成されていない場合はエラー扱い
+    if(!reportData.s01 && !reportData.s02){
+      throw new Error('レポートデータが空です');
+    }
+
     clearInterval(stepInterval);
     $('genProgressBar').style.width = '100%';
     $('genProgressText').textContent = '100%';
     $('genStatus').textContent = '生成完了！';
 
-    sessionStorage.setItem(cacheKey, JSON.stringify(reportData));
+    // localStorage（永続）+ sessionStorage（バックアップ）両方に保存
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(reportData));
+    } catch(e) {}
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(reportData));
+    } catch(e) {}
+
+    // 離脱警告を解除
+    _isGenerating = false;
+    window.removeEventListener('beforeunload', _onBeforeUnload);
 
     setTimeout(()=>{
       genDiv.style.display = 'none';
@@ -2330,11 +2404,49 @@ s12:【必須900字以上】同タイプの成功パターン・有名人。著�
 
   } catch(err) {
     clearInterval(stepInterval);
-    genDiv.style.display = 'none';
-    document.body.style.overflow = '';
-    alert('レポート生成中にエラーが発生しました。もう一度お試しください。');
+    _isGenerating = false;
+    window.removeEventListener('beforeunload', _onBeforeUnload);
+
+    // エラー画面を表示（alertではなくUI上で表示）
+    const genDiv = $('reportGenerating');
+    genDiv.innerHTML = `
+      <div style="text-align:center;padding:40px 24px;max-width:400px;">
+        <div style="font-size:40px;margin-bottom:20px;">⚠️</div>
+        <div style="font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:#f5f0e8;margin-bottom:12px;">生成中にエラーが発生しました</div>
+        <div style="font-size:13px;color:#888;line-height:1.8;margin-bottom:28px;">
+          AIサーバーの一時的な混雑が原因の可能性があります。<br>
+          <strong style="color:#f5f0e8;">決済はすでに完了しています。</strong><br>
+          もう一度生成をお試しください。解決しない場合はお問い合わせください。
+        </div>
+        <button onclick="retryReportGeneration()" style="display:block;width:100%;padding:16px;background:#c0392b;color:#fff;border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">
+          もう一度生成する →
+        </button>
+        <a href="mailto:mirale.support@gmail.com?subject=レポート生成エラーについて" style="display:block;width:100%;padding:12px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box;margin-bottom:8px;">
+          📧 サポートに問い合わせる
+        </a>
+        <button onclick="closeGeneratingScreen()" style="display:block;width:100%;padding:12px;background:none;color:#555;border:none;font-size:12px;cursor:pointer;">
+          戻る
+        </button>
+      </div>`;
     console.error(err);
   }
+}
+
+// エラー時のリトライ
+function retryReportGeneration(){
+  const genDiv = $('reportGenerating');
+  genDiv.style.display = 'none';
+  document.body.style.overflow = '';
+  // ニックネームモーダルを再表示
+  $('nicknameModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+// 生成画面を閉じて戻る
+function closeGeneratingScreen(){
+  const genDiv = $('reportGenerating');
+  genDiv.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 function renderPremiumReport(data, nickname){
