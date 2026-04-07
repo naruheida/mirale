@@ -3525,7 +3525,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
         // 再開バナーを表示
         const banner = document.createElement('div');
         banner.id = 'resumeBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#1a1200;border-bottom:2px solid #b8962e;padding:12px 20px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+        banner.style.cssText = 'position:relative;top:0;left:0;right:0;background:#1a1200;border-bottom:2px solid #b8962e;padding:12px 20px;z-index:99;display:flex;align-items:center;justify-content:space-between;gap:12px;';
         banner.innerHTML = `
           <div>
             <div style="font-size:12px;font-weight:700;color:#d4af50;margin-bottom:2px;">⚠️ レポート生成が中断されました</div>
@@ -3535,7 +3535,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
             <button onclick="resumeReportGeneration('${state.nickname||'あなた'}')" style="padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">再開する →</button>
             <button onclick="dismissResumeBanner()" style="padding:10px 12px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;">✕</button>
           </div>`;
-        document.body.appendChild(banner);
+        // メインコンテンツの先頭に挿入（ヘッダーの下・コンテンツの上）
+        const mainEl = document.querySelector('.main');
+        if(mainEl) mainEl.insertBefore(banner, mainEl.firstChild);
+        else document.body.appendChild(banner);
         baseShow('s-intro');
         return;
       } else {
