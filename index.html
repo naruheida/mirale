@@ -132,30 +132,39 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 .th-text strong{color:var(--red);}
 
 /* ===== PAYWALL GATE ===== */
-.paywall-gate{background:var(--ink);color:var(--paper);padding:40px 32px;margin-bottom:20px;position:relative;overflow:hidden;}
+.paywall-gate{background:var(--ink);color:var(--paper);padding:28px 24px 24px;margin-bottom:20px;position:relative;overflow:hidden;}
 .paywall-gate::after{content:'¥';position:absolute;right:-12px;bottom:-20px;font-family:'Bebas Neue',sans-serif;font-size:200px;color:rgba(255,255,255,0.04);line-height:1;pointer-events:none;}
 .pg-label{font-size:9px;letter-spacing:0.3em;color:var(--gold2);text-transform:uppercase;font-weight:700;margin-bottom:12px;}
-.pg-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:900;margin-bottom:16px;line-height:1.5;}
-.pg-preview{margin-bottom:24px;}
-.pg-preview-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);}
+.pg-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:900;margin-bottom:20px;line-height:1.5;}
+.pg-sample{border:1px solid rgba(255,255,255,0.12);padding:16px;margin-bottom:20px;}
+.pg-sample-label{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold2);margin-bottom:10px;}
+.pg-sample-text{font-family:'Noto Serif JP',serif;font-size:13px;color:rgba(245,240,232,0.9);line-height:1.9;margin-bottom:8px;}
+.pg-sample-blur{font-size:13px;color:rgba(245,240,232,0.2);line-height:1.8;filter:blur(4px);user-select:none;pointer-events:none;}
+.pg-sample-lock{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:rgba(245,240,232,0.3);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);}
+.pg-preview{margin-bottom:20px;}
+.pg-preview-item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
 .pg-preview-item:last-child{border-bottom:none;}
-.pi-lock{font-size:14px;flex-shrink:0;margin-top:1px;}
-.pi-text{font-size:13px;color:rgba(245,240,232,0.85);line-height:1.6;}
-.pi-text strong{color:var(--gold2);}
+.pi-lock{font-size:13px;flex-shrink:0;margin-top:3px;}
+.pi-body{flex:1;}
+.pi-title{font-size:13px;color:var(--gold2);font-weight:700;margin-bottom:2px;}
+.pi-sub{font-size:11px;color:rgba(245,240,232,0.4);line-height:1.5;}
+.pi-badge{font-size:9px;background:rgba(192,57,43,0.3);color:#e74c3c;padding:2px 8px;white-space:nowrap;flex-shrink:0;margin-top:4px;}
 .pg-price-wrap{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
 .pg-price{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:0.05em;color:var(--gold2);line-height:1;}
 .pg-price-unit{font-size:14px;color:rgba(245,240,232,0.5);}
-.pg-price-sub{font-size:11px;color:rgba(245,240,232,0.4);margin-bottom:24px;}
+.pg-price-sub{font-size:11px;color:rgba(245,240,232,0.4);margin-bottom:20px;}
 .pg-btn{display:block;width:100%;padding:20px;background:var(--red);color:white;border:none;font-family:'Noto Serif JP',serif;font-size:17px;font-weight:700;letter-spacing:0.1em;cursor:pointer;transition:background 0.2s;position:relative;margin-bottom:12px;}
 .pg-btn:hover{background:var(--red2);}
 .pg-btn::after{content:'→';position:absolute;right:20px;top:50%;transform:translateY(-50%);font-family:sans-serif;}
+.pg-trust{display:flex;justify-content:center;gap:16px;margin-bottom:12px;font-size:10px;color:rgba(245,240,232,0.3);}
 .pg-sub-btn{display:block;width:100%;padding:14px;background:rgba(255,255,255,0.06);color:rgba(245,240,232,0.6);border:1px solid rgba(255,255,255,0.15);font-family:'Noto Sans JP',sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;text-align:center;}
 .pg-sub-btn:hover{background:rgba(255,255,255,0.1);color:var(--paper);}
 .pg-note{font-size:10px;color:rgba(245,240,232,0.3);text-align:center;margin-top:12px;}
-.social-proof{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.06);padding:14px 16px;margin-bottom:20px;}
+.social-proof{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:12px 14px;margin-bottom:20px;}
 .sp-avatars{display:flex;}
-.sp-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:11px;margin-right:-6px;border:2px solid var(--ink);}
-.sp-text{font-size:12px;color:rgba(245,240,232,0.7);line-height:1.5;}
+.sp-avatar{width:26px;height:26px;border-radius:50%;background:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:10px;margin-left:-6px;border:2px solid var(--ink);}
+.sp-avatar:first-child{margin-left:0;}
+.sp-text{font-size:11px;color:rgba(245,240,232,0.55);line-height:1.5;}
 
 /* RESULT (有料コンテンツ) */
 .result-masthead{background:#0e0c0a;color:var(--paper);padding:40px 32px;margin-bottom:32px;position:relative;overflow:hidden;transition:background 0.4s ease;}
@@ -266,7 +275,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 .company-badge{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;}
 .company-badge.listed{background:rgba(39,174,96,0.1);border:1px solid var(--green);color:var(--green);}
 .company-badge.unlisted{background:rgba(122,111,98,0.1);border:1px solid var(--muted);color:var(--muted);}
-.edinet-income{background:var(--paper2);border:1px solid var(--border);border-left:3px solid var(--green);padding:12px 16px;margin-top:8px;font-size:12px;line-height:1.7;}
+.edinet-income{background:var(--paper2);border:1px solid var(--border);border-left:3px solid var(--green);padding:12px 16px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--ink);}
 .edinet-income strong{color:var(--green);font-weight:700;}
 
 /* DB蓄積通知 */
@@ -593,33 +602,59 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
   </div>
   <!-- PAYWALL GATE -->
   <div class="paywall-gate">
-    <div class="pg-label">Full Report — Premium</div>
+    <div class="pg-label">Full Report — ¥980</div>
     <div class="pg-title">残酷な数字の全貌と、<br>今すぐできる3つの打ち手</div>
+
+    <!-- レポート本文サンプル -->
+    <div class="pg-sample">
+      <div class="pg-sample-label">レポート本文サンプル</div>
+      <div class="pg-sample-text" id="pgSampleText">「あなたのタイプが持つ最大の武器は、複雑な状況を瞬時に構造化する能力です。しかしその強みは、同時に…」</div>
+      <div class="pg-sample-blur">この先のパーソナライズ分析では、あなたの現在の年収・役職・業種データをもとに転職タイミング・昇進可能性・収入最大化の具体的ステップが記載されます。転職推奨ランキング・AI代替リスク・今月の転機も含まれます。</div>
+      <div class="pg-sample-lock">🔒 続きは購入後に全文表示</div>
+    </div>
+
+    <!-- コンテンツリスト -->
+    <div class="pg-preview">
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔓</div>
+        <div class="pi-body"><div class="pi-title">仕事DNA「光と影」診断</div><div class="pi-sub">タイプが持つ強みと盲点の徹底分析</div></div>
+      </div>
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔒</div>
+        <div class="pi-body"><div class="pi-title">生涯年収グラフ（65歳まで全年齢）</div><div class="pi-sub">1万円単位のシミュレーション＋業界平均比較</div></div>
+        <div class="pi-badge">人気No.1</div>
+      </div>
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔒</div>
+        <div class="pi-body"><div class="pi-title">転職・独立・昇進の3シナリオ比較</div><div class="pi-sub">生涯収入差と向いている選択肢</div></div>
+      </div>
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔒</div>
+        <div class="pi-body"><div class="pi-title">AI代替リスクと年収防衛戦略</div><div class="pi-sub">タイプ×業種×職種の完全パーソナライズ</div></div>
+      </div>
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔒</div>
+        <div class="pi-body"><div class="pi-title">今すぐ動ける3つの打ち手</div><div class="pi-sub">転職・昇進・副業のあなた専用プラン</div></div>
+      </div>
+      <div class="pg-preview-item">
+        <div class="pi-lock">🔒</div>
+        <div class="pi-body"><div class="pi-title">同タイプの実キャリア変化5件</div><div class="pi-sub">転職後の年収・役職変化の実例データ</div></div>
+      </div>
+    </div>
+
+    <!-- 社会証明 -->
     <div class="social-proof">
       <div class="sp-avatars">
         <div class="sp-avatar">T</div><div class="sp-avatar">K</div><div class="sp-avatar">M</div><div class="sp-avatar">S</div>
       </div>
       <div class="sp-text">直近7日間で<strong style="color:var(--gold2)">243人</strong>が閲覧。「転職を決意した」という声多数。</div>
     </div>
-    <div class="pg-preview">
-      <div class="pg-preview-item"><div class="pi-lock">🔓</div><div class="pi-text"><strong>個人別 生涯年収シミュレーション</strong>（1万円単位・65歳まで全年齢グラフ）</div></div>
-      <div class="pg-preview-item"><div class="pi-lock">🔒</div><div class="pi-text"><strong>あなたが「役員」に届く条件分析</strong>（同タイプ到達者との比較）</div></div>
-      <div class="pg-preview-item"><div class="pi-lock">🔒</div><div class="pi-text"><strong>AI代替リスクを踏まえた年収防衛戦略</strong>（タイプ×業種×職種 完全パーソナライズ）</div></div>
-      <div class="pg-preview-item"><div class="pi-lock">🔒</div><div class="pi-text"><strong>年収を今すぐ上げる3つの打ち手</strong>（転職・昇進・副業 あなた専用プラン）</div></div>
-      <div class="pg-preview-item"><div class="pi-lock">🔒</div><div class="pi-text"><strong>同タイプの実際のキャリア変化5件</strong>（転職後年収・役職の変化）</div></div>
-      <div class="pg-preview-item"><div class="pi-lock">🔒</div><div class="pi-text"><strong>パーソナライズ求人レコメンド</strong>（あなたのスペックに合う求人3選）</div></div>
-    </div>
-    <div style="background:#1a1a1a;border:1px solid #333;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:24px;">📱</div>
-      <div>
-        <div style="font-size:12px;font-weight:700;color:#d4af50;letter-spacing:0.1em;margin-bottom:2px;">WEB レポート形式</div>
-        <div style="font-size:11px;color:#aaa;line-height:1.6;">購入後すぐブラウザで全内容を閲覧。スマホでも読みやすい専用ページで表示。PDFダウンロード不要。</div>
-      </div>
-    </div>
+
+    <!-- 価格・ボタン -->
     <div class="pg-price-wrap"><div class="pg-price">¥980</div><div class="pg-price-unit">買い切り・購入後すぐ閲覧</div></div>
     <div class="pg-price-sub">Stripe決済 ｜ クレジットカード対応 ｜ 決済完了後すぐ閲覧可能</div>
-    <button class="pg-btn" onclick="purchase()">📊 有料レポートを購入する（¥980）</button>
-    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;font-size:11px;color:rgba(245,240,232,0.4);">
+    <button class="pg-btn" onclick="purchase()">有料レポートを購入する（¥980）</button>
+    <div class="pg-trust">
       <span>🔒 SSL暗号化通信</span>
       <span>💳 Stripe安全決済</span>
       <span>⚡ 購入後すぐ閲覧</span>
@@ -1992,6 +2027,16 @@ function computeAndShowTeaser(){
   const job=['finance','it','consult'].includes(profile.job)?'高収入業界':'あなたの業界';
   const urgency=yearsLeft<=5?'残り時間は少ない。':'';
   $('teaserHook').innerHTML='「'+td.name+'」タイプの統計的な昇給停止は<strong>'+inc.stopAge+'歳</strong>。'+urgency+'今のペースで働き続けた場合、生涯賃金は<strong>〇〇億円</strong>（有料で公開）。同業界・同タイプで転職に動いた人の<strong>73%が年収UP</strong>を実現している。あなたはどうするか。';
+
+  // サンプルテキストをタイプ別に差し替え
+  const pgSample = document.getElementById('pgSampleText');
+  if(pgSample && typeCode){
+    const sampleMap = {
+      A: '「あなたのタイプが持つ最大の武器は、人を動かすビジョンを描く力です。しかしその強みは、同時に…」',
+      B: '「あなたのタイプが持つ最大の武器は、複雑な状況を瞬時に構造化する能力です。しかしその強みは、同時に…」',
+    };
+    pgSample.textContent = sampleMap[typeCode[0]] || sampleMap['B'];
+  }
 
   show('s-teaser');setPbar(90);window.scrollTo({top:0,behavior:'smooth'});
 }
