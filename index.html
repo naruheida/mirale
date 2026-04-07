@@ -2495,28 +2495,16 @@ function renderPremiumReport(data, nickname){
   const parseMarkdown = (text) => {
     if(!text) return '生成中...';
     return text
-      // 見出し ##
-      .replace(/^### (.+)$/gm, '<div style="font-size:13px;font-weight:700;color:#d4af50;margin:16px 0 6px;letter-spacing:0.05em;">$1</div>')
+      .replace(/^### (.+)$/gm, '<div style="font-size:13px;font-weight:700;color:#d4af50;margin:16px 0 6px;">$1</div>')
       .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:#f5f0e8;margin:20px 0 8px;border-bottom:1px solid #2a2a2a;padding-bottom:6px;">$1</div>')
       .replace(/^# (.+)$/gm, '<div style="font-size:15px;font-weight:700;color:#f5f0e8;margin:20px 0 8px;">$1</div>')
-      // 太字
       .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f5f0e8;font-weight:700;">$1</strong>')
-      // 箇条書き
       .replace(/^[-・•]\s+(.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0;"><span style="color:#d4af50;flex-shrink:0;">▸</span><span>$1</span></div>')
-      .replace(/^\d+\.\s+(.+)$/gm, (m, p1, offset, str) => {
-        const num = str.slice(0, offset).split('
-').filter(l => /^\d+\./.test(l)).length + 1;
-        return `<div style="display:flex;gap:8px;margin:6px 0;"><span style="color:#d4af50;font-weight:700;min-width:18px;flex-shrink:0;">${num}.</span><span>${p1}</span></div>`;
-      })
-      // 改行
-      .replace(/
-
-/g, '<div style="height:12px;"></div>')
-      .replace(/
-/g, '<br>');
+      .split('\n\n').join('<div style="height:12px;"></div>')
+      .split('\n').join('<br>');
   };
 
-  // ── ヘルパー：AIテキストブロック
+    // ── ヘルパー：AIテキストブロック
   const aiText = (content) => `
     <div style="font-size:13px;line-height:2.0;color:#bbb;border-left:2px solid #2a2a2a;padding-left:16px;">${parseMarkdown(content)}</div>`;
 
