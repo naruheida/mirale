@@ -3511,41 +3511,45 @@ window.addEventListener('DOMContentLoaded', ()=>{
   try {
     const genState = localStorage.getItem('mirale_generating_state');
     if(genState){
+      // 安全のため必ず削除してからバナー表示を試みる
+      localStorage.removeItem('mirale_generating_state');
       const state = JSON.parse(genState);
       const elapsed = Date.now() - (state.timestamp || 0);
-      // 30分以内のデータのみ有効
       if(elapsed < 30 * 60 * 1000 && state.typeCode){
-        // 診断データを復元
         profile = state.profile || {};
         answers = state.answers || {};
         userEmail = state.userEmail || '';
         const td = WORK_DNA[state.typeCode] || WORK_DNA['ACXSM'];
         resultData = { typeCode: state.typeCode, td, inc: state.inc };
 
-        // 再開バナーを表示
+        const safeName = (state.nickname || 'あなた').replace(/'/g, '');
         const banner = document.createElement('div');
         banner.id = 'resumeBanner';
-        banner.style.cssText = 'position:relative;top:0;left:0;right:0;background:#1a1200;border-bottom:2px solid #b8962e;padding:12px 20px;z-index:99;display:flex;align-items:center;justify-content:space-between;gap:12px;';
-        banner.innerHTML = `
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#d4af50;margin-bottom:2px;">⚠️ レポート生成が中断されました</div>
-            <div style="font-size:11px;color:#888;">決済は完了しています。続きから再開できます。</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-shrink:0;">
-            <button onclick="resumeReportGeneration(this.dataset.name)" data-name="${state.nickname||'あなた'}" style="padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">再開する →</button>
-            <button onclick="dismissResumeBanner()" style="padding:10px 12px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;">✕</button>
-          </div>`;
-        // メインコンテンツの先頭に挿入（ヘッダーの下・コンテンツの上）
+        banner.style.cssText = 'position:relative;background:#1a1200;border-bottom:2px solid #b8962e;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+        const btn = document.createElement('button');
+        btn.textContent = '再開する →';
+        btn.style.cssText = 'padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;';
+        btn.onclick = () => resumeReportGeneration(safeName);
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'padding:10px 12px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;';
+        closeBtn.onclick = dismissResumeBanner;
+        const textDiv = document.createElement('div');
+        textDiv.innerHTML = '<div style="font-size:12px;font-weight:700;color:#d4af50;margin-bottom:2px;">⚠️ レポート生成が中断されました</div><div style="font-size:11px;color:#888;">続きから再開できます。</div>';
+        const btnDiv = document.createElement('div');
+        btnDiv.style.cssText = 'display:flex;gap:8px;flex-shrink:0;';
+        btnDiv.appendChild(btn);
+        btnDiv.appendChild(closeBtn);
+        banner.appendChild(textDiv);
+        banner.appendChild(btnDiv);
         const mainEl = document.querySelector('.main');
         if(mainEl) mainEl.insertBefore(banner, mainEl.firstChild);
         else document.body.appendChild(banner);
-        baseShow('s-intro');
-        return;
-      } else {
-        localStorage.removeItem('mirale_generating_state');
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    try { localStorage.removeItem('mirale_generating_state'); } catch(e2) {}
+  }
 
   if(!restoreState()){
     baseShow('s-intro');
