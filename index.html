@@ -2235,6 +2235,20 @@ async function startReportGeneration(){
   _isGenerating = true;
   window.addEventListener('beforeunload', _onBeforeUnload);
 
+  // 生成開始時に診断データをlocalStorageに保存（リロード後の再開用）
+  try {
+    const generatingState = {
+      profile,
+      answers,
+      userEmail,
+      nickname,
+      typeCode: resultData.typeCode,
+      inc: resultData.inc,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('mirale_generating_state', JSON.stringify(generatingState));
+  } catch(e) {}
+
   // プログレスアニメーション
   const steps = ['gs1','gs2','gs3','gs4','gs5','gs6'];
   const statusMessages = [
@@ -2392,6 +2406,9 @@ s12:【必須900字以上】同タイプの成功パターン・有名人。こ�
       sessionStorage.setItem(cacheKey, JSON.stringify(reportData));
     } catch(e) {}
 
+    // 生成完了→generating_stateを削除
+    try { localStorage.removeItem('mirale_generating_state'); } catch(e) {}
+
     // 離脱警告を解除
     _isGenerating = false;
     window.removeEventListener('beforeunload', _onBeforeUnload);
@@ -2406,6 +2423,7 @@ s12:【必須900字以上】同タイプの成功パターン・有名人。こ�
     clearInterval(stepInterval);
     _isGenerating = false;
     window.removeEventListener('beforeunload', _onBeforeUnload);
+    try { localStorage.removeItem('mirale_generating_state'); } catch(e) {}
 
     // エラー画面を表示（alertではなくUI上で表示）
     const genDiv = $('reportGenerating');
@@ -3489,10 +3507,81 @@ window.addEventListener('DOMContentLoaded', ()=>{
     return;
   }
 
+  // 生成中リロード検知→再開バナーを表示
+  try {
+    const genState = localStorage.getItem('mirale_generating_state');
+    if(genState){
+      const state = JSON.parse(genState);
+      const elapsed = Date.now() - (state.timestamp || 0);
+      // 30分以内のデータのみ有効
+      if(elapsed < 30 * 60 * 1000 && state.typeCode){
+        // 診断データを復元
+        profile = state.profile || {};
+        answers = state.answers || {};
+        userEmail = state.userEmail || '';
+        const td = WORK_DNA[state.typeCode] || WORK_DNA['ACXSM'];
+        resultData = { typeCode: state.typeCode, td, inc: state.inc };
+
+        // 再開バナーを表示
+        const banner = document.createElement('div');
+        banner.id = 'resumeBanner';
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1200;border-top:2px solid #b8962e;padding:16px 20px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+        banner.innerHTML = `
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#d4af50;margin-bottom:2px;">⚠️ レポート生成が中断されました</div>
+            <div style="font-size:11px;color:#888;">決済は完了しています。続きから再開できます。</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button onclick="resumeReportGeneration('${state.nickname||'あなた'}')" style="padding:10px 16px;background:#b8962e;color:#000;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">再開する →</button>
+            <button onclick="dismissResumeBanner()" style="padding:10px 12px;background:none;border:1px solid #333;color:#666;font-size:12px;cursor:pointer;">✕</button>
+          </div>`;
+        document.body.appendChild(banner);
+        baseShow('s-intro');
+        return;
+      } else {
+        localStorage.removeItem('mirale_generating_state');
+      }
+    }
+  } catch(e) {}
+
   if(!restoreState()){
     baseShow('s-intro');
   }
 });
+
+// 再開バナーから生成を再開
+function resumeReportGeneration(nickname){
+  const banner = document.getElementById('resumeBanner');
+  if(banner) banner.remove();
+  // キャッシュがあれば即表示
+  const cacheKey = 'mirale_report_' + (userEmail || 'guest') + '_' + (resultData.typeCode||'');
+  const cached = localStorage.getItem(cacheKey) || sessionStorage.getItem(cacheKey);
+  if(cached){
+    try {
+      const data = JSON.parse(cached);
+      if(Object.keys(data).length > 0 && data.s01){
+        renderPremiumReport(data, nickname);
+        return;
+      }
+    } catch(e) {}
+  }
+  // キャッシュがなければニックネームモーダルを開いて再生成
+  const emailWrap = document.getElementById('modalEmailWrap');
+  if(emailWrap) emailWrap.style.display = 'none';
+  const nicknameInput = document.getElementById('nicknameInput');
+  if(nicknameInput) nicknameInput.value = nickname !== 'あなた' ? nickname : '';
+  $('nicknameModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  isPurchased = true;
+  setPbar(90);
+}
+
+// 再開バナーを閉じる
+function dismissResumeBanner(){
+  const banner = document.getElementById('resumeBanner');
+  if(banner) banner.remove();
+  try { localStorage.removeItem('mirale_generating_state'); } catch(e) {}
+}
 </script>
 </body>
 </html>
