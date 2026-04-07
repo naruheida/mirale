@@ -864,7 +864,7 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <button onclick="purchase()" class="purchase-btn" style="display:block;width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:pointer;margin-bottom:10px;">📊 有料レポートを購入する（¥980）</button>
     <div style="font-size:10px;color:rgba(245,240,232,0.35);">🔒 SSL暗号化 ｜ Stripe安全決済 ｜ 購入後すぐ閲覧可能</div>
   </div>
-  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br>お問い合わせ：<a href="mailto:mirale.support@gmail.com" style="color:var(--muted);text-decoration:underline;">mirale.support@gmail.com</a></div>
+  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br>お問い合わせ：<a id="footerMailLink" style="color:var(--muted);text-decoration:underline;"></a></div>
 </section>
 </main>
 
@@ -2439,7 +2439,7 @@ s12:【必須900字以上】同タイプの成功パターン・有名人。こ�
         <button onclick="retryReportGeneration()" style="display:block;width:100%;padding:16px;background:#c0392b;color:#fff;border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">
           もう一度生成する →
         </button>
-        <a href="mailto:mirale.support@gmail.com?subject=レポート生成エラーについて" style="display:block;width:100%;padding:12px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box;margin-bottom:8px;">
+        <a href="#" onclick="window.location.href='mailto:'+('mirale.support'+'@'+'gmail.com')+'?subject=レポート生成エラーについて'" style="display:block;width:100%;padding:12px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box;margin-bottom:8px;">
           📧 サポートに問い合わせる
         </a>
         <button onclick="closeGeneratingScreen()" style="display:block;width:100%;padding:12px;background:none;color:#555;border:none;font-size:12px;cursor:pointer;">
@@ -3589,6 +3589,13 @@ function dismissResumeBanner(){
   if(banner) banner.remove();
   try { localStorage.removeItem('mirale_generating_state'); } catch(e) {}
 }
+
+// メールアドレスをJSで設定（Cloudflareの難読化回避）
+(function(){
+  var m = 'mirale.support' + '@' + 'gmail.com';
+  var el = document.getElementById('footerMailLink');
+  if(el){ el.href = 'mailto:' + m; el.textContent = m; }
+})();
 </script>
 </body>
 </html>
