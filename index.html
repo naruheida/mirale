@@ -2356,7 +2356,7 @@ s09:【必須900字以上】ビジネス力と職場への影響。組織に与�
 以下3セクションをJSONで生成(キー:s10,s11,s12)。各セクション必ず指定字数を超えること：
 s10:【必須900字以上】ビジネスが上手くいく方法。${nickname}専用の成功法則を7つ、それぞれ具体的なシーン・行動・期待できる効果付きで詳述。
 s11:【必須2500字以上】2026年の転機・今月の運勢。4月〜12月を月別に、キャリア・お金・対人の3軸で転機とアクションを具体的に記述。
-s12:【必須900字以上】同タイプの成功パターン・有名人。著名人との共通点・成功パターン3つ・失敗から学ぶ教訓を具体的に。` },
+s12:【必須900字以上】同タイプの成功パターン・有名人。このタイプと共通点を持つ著名人（経営者・起業家・アスリート・クリエイターなど幅広い分野から選ぶこと。同じ人物を毎回使い回さず、ユーザーの業界・年齢・タイプに合った人物を選ぶ）との共通点・成功パターン3つ・失敗から学ぶ教訓を具体的に。` },
     ];
 
     // 並列でAPI呼び出し
@@ -2473,9 +2473,34 @@ function renderPremiumReport(data, nickname){
       ${body}
     </div>`;
 
+  // ── ヘルパー：MarkdownをHTMLに変換
+  const parseMarkdown = (text) => {
+    if(!text) return '生成中...';
+    return text
+      // 見出し ##
+      .replace(/^### (.+)$/gm, '<div style="font-size:13px;font-weight:700;color:#d4af50;margin:16px 0 6px;letter-spacing:0.05em;">$1</div>')
+      .replace(/^## (.+)$/gm, '<div style="font-size:14px;font-weight:700;color:#f5f0e8;margin:20px 0 8px;border-bottom:1px solid #2a2a2a;padding-bottom:6px;">$1</div>')
+      .replace(/^# (.+)$/gm, '<div style="font-size:15px;font-weight:700;color:#f5f0e8;margin:20px 0 8px;">$1</div>')
+      // 太字
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f5f0e8;font-weight:700;">$1</strong>')
+      // 箇条書き
+      .replace(/^[-・•]\s+(.+)$/gm, '<div style="display:flex;gap:8px;margin:4px 0;"><span style="color:#d4af50;flex-shrink:0;">▸</span><span>$1</span></div>')
+      .replace(/^\d+\.\s+(.+)$/gm, (m, p1, offset, str) => {
+        const num = str.slice(0, offset).split('
+').filter(l => /^\d+\./.test(l)).length + 1;
+        return `<div style="display:flex;gap:8px;margin:6px 0;"><span style="color:#d4af50;font-weight:700;min-width:18px;flex-shrink:0;">${num}.</span><span>${p1}</span></div>`;
+      })
+      // 改行
+      .replace(/
+
+/g, '<div style="height:12px;"></div>')
+      .replace(/
+/g, '<br>');
+  };
+
   // ── ヘルパー：AIテキストブロック
   const aiText = (content) => `
-    <div style="font-size:13px;line-height:2.1;color:#bbb;white-space:pre-wrap;border-left:2px solid #2a2a2a;padding-left:16px;">${content||'生成中...'}</div>`;
+    <div style="font-size:13px;line-height:2.0;color:#bbb;border-left:2px solid #2a2a2a;padding-left:16px;">${parseMarkdown(content)}</div>`;
 
   // ── ヘルパー：強調引用ブロック
   const quoteBlock = (text) => `
