@@ -957,8 +957,9 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <button onclick="purchase()" class="purchase-btn" style="display:block;width:100%;padding:18px;background:var(--gold);color:var(--ink);border:none;font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;letter-spacing:0.05em;cursor:pointer;margin-bottom:10px;">📊 有料レポートを購入する（¥980）</button>
     <div style="font-size:10px;color:rgba(245,240,232,0.35);">🔒 SSL暗号化 ｜ Stripe安全決済 ｜ 購入後すぐ閲覧可能</div>
   </div>
-  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br><strong>返金ポリシー</strong>：デジタルコンテンツの性質上、原則として返金はお受けしておりません。ただし、システムエラーによりレポートが正常に生成・表示されなかった場合は、購入から7日以内に下記メールまでご連絡ください。内容を確認の上、対応いたします。<br><br>お問い合わせ：<a id="footerMailLink" style="color:var(--muted);text-decoration:underline;"></a></div>
+  <div class="disclaimer">※本サービスは国税庁「民間給与実態統計調査」、厚生労働省「賃金構造基本統計調査」、人事院「民間企業給与実態調査」等の公開統計データを基にした統計的シミュレーションです。個別の転職・投資等の助言ではありません。実際の数値は個人の状況により大きく異なります。<br><br><strong>返金ポリシー</strong>：デジタルコンテンツの性質上、原則として返金はお受けしておりません。ただし、システムエラーによりレポートが正常に生成・表示されなかった場合は、購入から7日以内に下記メールまでご連絡ください。内容を確認の上、対応いたします。<br><br>お問い合わせ：<a id="footerMailLink" style="color:var(--muted);text-decoration:underline;"></a>　｜　<a href="tokutei.html" style="color:var(--muted);text-decoration:underline;">特定商取引法に基づく表記</a></div>
 </section>
+
 </main>
 
 <!-- NICKNAME MODAL -->
@@ -3671,13 +3672,14 @@ function dismissResumeBanner(){
   try { localStorage.removeItem('mirale_generating_state'); } catch(e) {}
 }
 
-// メールアドレスをJSで設定（Cloudflareの難読化回避）
+// メールアドレス・電話番号をJSで設定（Cloudflareの難読化回避）
 (function(){
   var m = 'mirale.support' + '@' + 'gmail.com';
   var footer = document.getElementById('footerMailLink');
   if(footer){ footer.href = 'mailto:' + m; footer.textContent = m; }
   var refund = document.getElementById('refundMailLink');
   if(refund){ refund.innerHTML = '<a href="mailto:' + m + '" style="color:rgba(245,240,232,0.5);text-decoration:underline;">' + m + '</a>'; }
+
 })();
 </script>
 </body>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特定商取引法に基づく表記 | Mirale</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<meta name="robots" content="noindex">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f5f0e8;color:#0e0c0a;font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
+.header{border-bottom:2px solid #0e0c0a;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:#fdfaf5;}
+.logo{font-family:'Noto Serif JP',serif;font-weight:900;font-size:16px;letter-spacing:0.1em;padding:16px 0;display:flex;align-items:center;gap:10px;text-decoration:none;color:#0e0c0a;}
+.logo-mark{width:28px;height:28px;background:#0e0c0a;color:#f5f0e8;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.main{max-width:720px;margin:0 auto;padding:60px 24px 100px;}
+.eyebrow{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:#7a6f62;margin-bottom:16px;}
+h1{font-family:'Noto Serif JP',serif;font-size:24px;font-weight:900;margin-bottom:48px;padding-bottom:20px;border-bottom:2px solid #0e0c0a;}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.9;}
+tr{border-bottom:1px solid #cfc4b0;}
+td{padding:18px 0;vertical-align:top;}
+td:first-child{color:#7a6f62;font-weight:700;width:38%;font-size:13px;padding-right:24px;}
+.back-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#7a6f62;text-decoration:none;margin-top:48px;}
+.back-link:hover{color:#0e0c0a;}
+</style>
+</head>
+<body>
+<header class="header">
+  <a href="/" class="logo"><div class="logo-mark">M</div>Mirale</a>
+</header>
+<main class="main">
+  <div class="eyebrow">Legal</div>
+  <h1>特定商取引法に基づく表記</h1>
+  <table>
+    <tr>
+      <td>販売業者</td>
+      <td>稗田 成</td>
+    </tr>
+    <tr>
+      <td>所在地</td>
+      <td>〒141-0031 東京都品川区西五反田２丁目１８−３ グレイス五反田506</td>
+    </tr>
+    <tr>
+      <td>電話番号</td>
+      <td id="tel">090-5678-3954<br><span style="font-size:12px;color:#7a6f62;">※お問い合わせはメールにてお願いいたします</span></td>
+    </tr>
+    <tr>
+      <td>メールアドレス</td>
+      <td><a id="mail" style="color:#0e0c0a;"></a></td>
+    </tr>
+    <tr>
+      <td>販売価格</td>
+      <td>各サービスページに表示された価格（税込）<br>有料レポート：¥980（税込）</td>
+    </tr>
+    <tr>
+      <td>支払方法</td>
+      <td>クレジットカード決済（Stripe）</td>
+    </tr>
+    <tr>
+      <td>支払時期</td>
+      <td>購入手続き完了時に決済されます</td>
+    </tr>
+    <tr>
+      <td>商品の引き渡し時期</td>
+      <td>決済完了後、即時にブラウザ上でご覧いただけます</td>
+    </tr>
+    <tr>
+      <td>返品・返金について</td>
+      <td>デジタルコンテンツの性質上、原則として返品・返金はお受けしておりません。ただし、システムエラーによりレポートが正常に生成・表示されなかった場合は、購入から7日以内にメールにてご連絡ください。内容を確認の上、対応いたします。</td>
+    </tr>
+    <tr>
+      <td>動作環境</td>
+      <td>インターネット接続環境・最新のブラウザ（Chrome / Safari / Firefox 推奨）</td>
+    </tr>
+  </table>
+  <a href="/" class="back-link">← Miraleトップへ戻る</a>
+</main>
+<script>
+(function(){
+  var m = 'mirale.support' + '@' + 'gmail.com';
+  var el = document.getElementById('mail');
+  if(el){ el.href = 'mailto:' + m; el.textContent = m; }
+})();
+</script>
+</body>
+</html>
