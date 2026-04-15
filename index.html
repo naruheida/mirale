@@ -2184,13 +2184,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ============================================================
 // Stripe設定
 // ============================================================
-const STRIPE_PK = 'pk_test_51TJF82HSSKEtwIBkNZmiAsL0g5QGFG1quxPhXM5Ub05nRlWszzbrffLiYDkxL4BuAFzfCF2cqgDHtXYnnWp3aWSG00LOrOYlS4';
+const STRIPE_PK = 'pk_live_51TJF7kHWmyQgzbC7NilRsU9gocX14FHCvFr5uzwEAZeYAC8UojVAr7X8uMPhwz2MfXGitIj7OszDsQcwuni1jHkr00GLHPe7XS';
 const STRIPE_PRICE_ID = 'price_1TJFEEHSSKEtwIBkcntNx5Rj';
 
 // Stripeダッシュボードで作成したPayment Link URLをここに設定
 // 作成方法：Stripeダッシュボード→「Payment Links」→「リンクを作成」→price_1TJFEEHSSKEtwIBkcntNx5Rj を選択→成功URL・キャンセルURLを設定
 // 設定するまでの暫定：Checkoutセッションをサーバーレスで生成
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_9B6cN5eNM9EQehDfoW0Fi00';
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/14A3cvfSx8O3bX89tY5gc00';
 
 async function purchase(){
   // テストモードは従来通りモーダル表示（メール欄非表示）
@@ -2244,7 +2244,7 @@ async function purchase(){
       console.error(result.error);
       // フォールバック：Stripeダッシュボードの支払いリンクへ
       alert('決済ページへ移動します。');
-      window.location.href = 'https://buy.stripe.com/test_' + STRIPE_PRICE_ID;
+      window.location.href = 'https://buy.stripe.com/14A3cvfSx8O3bX89tY5gc00';
     }
   } catch(e) {
     console.error(e);
