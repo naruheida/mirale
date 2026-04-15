@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>特定商取引法に基づく表記 | Mirale</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
-<meta name="robots" content="noindex">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#f5f0e8;color:#0e0c0a;font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
@@ -21,6 +20,7 @@ td{padding:18px 0;vertical-align:top;}
 td:first-child{color:#7a6f62;font-weight:700;width:38%;font-size:13px;padding-right:24px;}
 .back-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#7a6f62;text-decoration:none;margin-top:48px;}
 .back-link:hover{color:#0e0c0a;}
+a{color:#0e0c0a;}
 </style>
 </head>
 <body>
@@ -41,45 +41,46 @@ td:first-child{color:#7a6f62;font-weight:700;width:38%;font-size:13px;padding-ri
     </tr>
     <tr>
       <td>電話番号</td>
-      <td id="tel">090-5678-3954<br><span style="font-size:12px;color:#7a6f62;">※お問い合わせはメールにてお願いいたします</span></td>
+      <td>090-5678-3954<br><span style="font-size:12px;color:#7a6f62;">※お問い合わせはメールにてお願いいたします</span></td>
     </tr>
     <tr>
       <td>メールアドレス</td>
-      <td><a id="mail" style="color:#0e0c0a;"></a></td>
+      <td>mirale.support@gmail.com</td>
+    </tr>
+    <tr>
+      <td>サービス内容</td>
+      <td>MBTIをベースにした32タイプ診断による、生涯年収・昇給停止年齢・最高到達役職の統計的予測レポート（デジタルコンテンツ）</td>
     </tr>
     <tr>
       <td>販売価格</td>
-      <td>各サービスページに表示された価格（税込）<br>有料レポート：¥980（税込）</td>
+      <td>有料レポート：980円（税込）<br><span style="font-size:12px;color:#7a6f62;">※価格は各サービスページに表示された金額が適用されます</span></td>
+    </tr>
+    <tr>
+      <td>販売価格以外に<br>必要な費用</td>
+      <td>なし<br><span style="font-size:12px;color:#7a6f62;">※インターネット接続に必要な通信費はお客様のご負担となります</span></td>
     </tr>
     <tr>
       <td>支払方法</td>
-      <td>クレジットカード決済（Stripe）</td>
+      <td>クレジットカード決済（Visa・Mastercard・American Express・JCB）</td>
     </tr>
     <tr>
       <td>支払時期</td>
-      <td>購入手続き完了時に決済されます</td>
+      <td>購入手続き完了時に即時決済されます</td>
     </tr>
     <tr>
-      <td>商品の引き渡し時期</td>
-      <td>決済完了後、即時にブラウザ上でご覧いただけます</td>
+      <td>サービスの提供時期</td>
+      <td>決済完了後、即時にブラウザ上でレポートをご覧いただけます</td>
     </tr>
     <tr>
-      <td>返品・返金について</td>
-      <td>デジタルコンテンツの性質上、原則として返品・返金はお受けしておりません。ただし、システムエラーによりレポートが正常に生成・表示されなかった場合は、購入から7日以内にメールにてご連絡ください。内容を確認の上、対応いたします。</td>
+      <td>返品・キャンセルについて</td>
+      <td>デジタルコンテンツの性質上、購入完了後の返品・返金・キャンセルは原則としてお受けしておりません。<br><br>ただし、以下の場合は購入日から7日以内にメール（mirale.support@gmail.com）にてご連絡ください。内容を確認のうえ、返金対応いたします。<br><br>・システムエラーによりレポートが正常に生成・表示されなかった場合<br>・決済が二重に処理された場合</td>
     </tr>
     <tr>
       <td>動作環境</td>
-      <td>インターネット接続環境・最新のブラウザ（Chrome / Safari / Firefox 推奨）</td>
+      <td>インターネット接続環境および最新のWebブラウザ（Google Chrome・Safari・Firefox・Microsoft Edge 推奨）</td>
     </tr>
   </table>
   <a href="/" class="back-link">← Miraleトップへ戻る</a>
 </main>
-<script>
-(function(){
-  var m = 'mirale.support' + '@' + 'gmail.com';
-  var el = document.getElementById('mail');
-  if(el){ el.href = 'mailto:' + m; el.textContent = m; }
-})();
-</script>
 </body>
 </html>
