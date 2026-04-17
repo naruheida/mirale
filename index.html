@@ -24,6 +24,8 @@
 <meta name="twitter:title" content="Mirale｜統計が暴く、あなたの30年後">
 <meta name="twitter:description" content="32タイプ診断で生涯年収・昇給停止年齢がわかる。無料・4分で完了。">
 <meta name="twitter:image" content="https://mirale.app/ogp.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <script src="https://js.stripe.com/v3/"></script>
 <style>
@@ -2222,6 +2224,17 @@ async function purchase(){
     btn.disabled = true;
     btn.style.opacity = '0.7';
   });
+
+  // ブラウザの戻るボタンで戻ってきた時にボタンを復元する
+  window.addEventListener('pageshow', function(e){
+    if(e.persisted){
+      document.querySelectorAll('.pg-btn, .purchase-btn').forEach(btn => {
+        btn.textContent = '有料レポートを購入する（¥980）';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+    }
+  }, {once: true});
 
   // Payment Linkがあればそちらへ、なければStripe.js経由
   if(STRIPE_PAYMENT_LINK){
