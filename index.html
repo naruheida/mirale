@@ -341,7 +341,23 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
 .intro-voice-meta{font-size:10px;color:var(--muted);}
 .intro-bottom-note{font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.8;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '4403975463195610');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=4403975463195610&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 <header class="site-header">
@@ -789,9 +805,6 @@ select:focus,input:focus{outline:none;border-color:var(--ink);}
     <div style="font-size:10px;letter-spacing:0.2em;color:var(--gold2);font-weight:700;margin-bottom:8px;">SHARE YOUR TYPE</div>
     <div style="font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;margin-bottom:4px;" id="shareHeadline">あなたのタイプを友達に見せよう</div>
     <div style="font-size:11px;color:rgba(245,240,232,0.5);margin-bottom:20px;">「友達は何タイプ？」→ 診断リンクも一緒にシェアされます</div>
-    <button onclick="shareImage(event)" id="shareImageBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;border:none;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-      📸 結果画像を保存してシェア
-    </button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <button onclick="shareX()" style="padding:16px;background:#000;color:#fff;border:1px solid #333;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
         𝕏 でシェア
@@ -3471,36 +3484,6 @@ function calcJobChangeIntent() {
   return Math.min(score, 10); // 0〜10スコア
 }
 
-async function shareImage(e){
-  const btn = document.getElementById('shareImageBtn');
-  const original = btn.innerHTML;
-  btn.textContent = '⏳ 画像生成中...';
-  btn.disabled = true;
-  try {
-    const target = document.getElementById('rMasthead');
-    const canvas = await html2canvas(target, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-      logging: false,
-      ignoreElements: el => el.id === 'rCompanyInsight'
-    });
-    const ctx = canvas.getContext('2d');
-    ctx.font = 'bold 28px serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.textAlign = 'right';
-    ctx.fillText('Mirale', canvas.width - 24, canvas.height - 20);
-    const link = document.createElement('a');
-    link.download = 'mirale_' + (resultData.typeCode || 'result') + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    btn.textContent = '✅ 保存完了！画像をXに添付してシェアしよう';
-    setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 3500);
-  } catch(err) {
-    btn.textContent = '❌ エラーが発生しました';
-    setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 2000);
-  }
-}
 function shareX(){
   const {typeCode,td,inc}=resultData;
   const yearsLeft=Math.max(0,inc.stopAge-profile.age);
@@ -3606,6 +3589,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
     // URLから purchased=1 を除去（リロード対策）
     const cleanUrl = window.location.origin + window.location.pathname;
     window.history.replaceState({}, '', cleanUrl);
+    // Meta Pixel Purchase イベント
+    if(typeof fbq !== 'undefined'){
+      fbq('track', 'Purchase', {value: 980, currency: 'JPY'});
+    }
 
     // 購入前に保存した診断データを復元
     try {
